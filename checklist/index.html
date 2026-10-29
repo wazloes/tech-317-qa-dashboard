@@ -41,6 +41,8 @@ tr.child td{background:#fcfcfb;font-size:15px}tr.child td.tname{padding-left:44p
 .side pre,.req pre{max-height:520px}
 .diffs{background:#fef9c3;border-radius:8px;padding:10px 14px;margin:10px 0}
 .diff-type{color:#fb923c;font-weight:700}.diff-miss{color:#f87171;font-weight:700}.diffs .diff-type{color:#c2410c}.diffs .diff-miss{color:#dc2626}.jfold{color:#78716c}
+.okp{color:var(--grn);font-weight:700}.bang{display:inline-block;margin-left:6px;min-width:18px;text-align:center;font-weight:800;color:#854d0e;background:#facc15;border-radius:9px;padding:0 5px}
+.typebox{border:2px solid #f59e0b;background:#fffbeb;border-radius:8px;padding:10px 14px;margin:10px 0 14px}.typebox strong{color:#b45309}.typebox ul{margin:6px 0 0 18px;padding:0}.typebox li{margin:2px 0}
 .dtoggle{margin-left:10px;padding:3px 10px;border-radius:6px;border:1px solid #a8a29e;background:#fff;cursor:pointer;font-size:12px}
 </style>
 </head>
@@ -987,7 +989,11 @@ const TESTS=[
   "verdict": "Waiting \u2014 not ticked in Linear. Needs fresh expired tokens."
  }
 ];
-const STATUS={pass:{cls:'ok',badge:'pass',label:'Pass'},warn:{cls:'warn',badge:'warn',label:'Pass · shape ⚠'},fail:{cls:'fail',badge:'fail',label:'Fail'},wait:{cls:'wait',badge:'wait',label:'Waiting'},todo:{cls:'todo',badge:'todo',label:'Not started'},skip:{cls:'skip',badge:'skip',label:'Skipped'}};
+const STATUS={pass:{cls:'ok',badge:'pass',label:'Pass'},warn:{cls:'warn',badge:'warn',label:'Pass'},fail:{cls:'fail',badge:'fail',label:'Fail'},wait:{cls:'wait',badge:'wait',label:'Waiting'},todo:{cls:'todo',badge:'todo',label:'Not started'},skip:{cls:'skip',badge:'skip',label:'Skipped'}};
+function lbl(st){return st.badge==='warn'?'<span class="okp">Pass</span><span class="bang">!</span>':st.label}
+function badge(st){return st.badge==='warn'?'<span class="badge pass">Pass</span><span class="bang">!</span>':`<span class="badge ${st.badge}">${st.label}</span>`}
+function typeDiffs(c){return parseDiffs(c.diffs).filter(d=>d.kind==='type').map(d=>{const m=d.text.match(/^(\S+?):\s*(.+?) vs (.+)$/);return {id:c.id,path:m?m[1]:'',o:m?m[2]:'',n:m?m[3]:'',text:d.text}})}
+function typeBox(l){return l.length?`<div class="typebox"><strong>Type differences</strong><ul>${l.map(d=>`<li>Call ${esc(d.id)} · <span class="mono">${esc(d.path||d.text)}</span>${d.o?` — OLD <b>${esc(d.o)}</b> · NEW <b>${esc(d.n)}</b>`:''}</li>`).join('')}</ul></div>`:''}
 function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function hdrs(h){const k=Object.keys(h||{});return k.length?k.map(x=>x+': '+h[x]).join('\n'):'(none of interest)'}
 function find(id){for(const t of TESTS){if(t.id===id)return {t};for(const c of (t.children||[]))if(c.id===id)return {t:c,parent:t,n:t.children.indexOf(c)+1}}}
@@ -1020,22 +1026,21 @@ function sideHtml(s,diffs,which){return `<div class="side"><h4>${esc(s.label)}</
 function sentHtml(c){const r=s=>`${esc(c.method)} ${esc(s.url)}\n${esc(hdrs(s.reqHeaders))}\n\n${esc(s.reqBody??'(no body)')}`;
  return `<div class="req"><div class="label">What we sent</div><div class="sides"><div><div class="meta">OLD</div><pre>${r(c.old)}</pre></div><div><div class="meta">NEW</div><pre>${r(c.new)}</pre></div></div></div>`}
 function callHtml(c,n,parent){const st=STATUS[c.status];
- return `<span class="badge ${st.badge}">${st.label}</span>
- <h3>${esc(c.id)} · Call ${n} · <span class="mono">${esc(c.method)} ${esc(c.path)}</span></h3>
+ return `${badge(st)}
+ <h3>${esc(c.id)} · Call ${n} · <span class="mono">${esc(c.method)} ${esc(c.path)}</span></h3>${typeBox(typeDiffs(c))}
  <div class="meta">Part of ${esc(parent.id)} · ${esc(parent.name)} — ${esc(parent.linear)}</div>
  ${sentHtml(c)}
  <div class="label">What came back${c.diffs.length?`<button class="dtoggle" onclick="toggleDiffs('${c.id}')">${DIFFS_ONLY?'Show full JSON':'Show diffs only'}</button>`:''}</div><div class="sides">${sideHtml(c.old,parseDiffs(c.diffs),'old')}${sideHtml(c.new,parseDiffs(c.diffs),'new')}</div>
- ${c.diffs.length?`<div class="diffs"><strong>Shape differences (OLD vs NEW)</strong><pre style="background:none;color:inherit;padding:0">${parseDiffs(c.diffs).map(d=>`<span class="${d.kind==='type'?'diff-type':'diff-miss'}">${esc(d.text)}</span>`).join('\n')}</pre></div>`:''}
  ${c.note?`<p class="meta">${esc(c.note)}</p>`:''}
  <p><strong>Verdict: ${esc(c.verdict)}</strong></p>`}
 function openM(id){const f=find(id);if(!f)return;const t=f.t;let h='';
  if(f.parent) h=callHtml(t,f.n,f.parent);
  else if(t.children){const st=STATUS[t.status];
-  h=`<span class="badge ${st.badge}">${st.label}</span><h3>${esc(t.id)} · ${esc(t.name)}</h3><div class="meta">${esc(t.linear)}</div><p class="desc">${esc(t.simple)}</p>
-  <table><thead><tr><th>Call</th><th>Request</th><th>OLD</th><th>NEW</th><th>Result</th></tr></thead><tbody>${t.children.map((c,i)=>`<tr class="click" onclick="openM('${c.id}')"><td>${i+1} · ${esc(c.id)}</td><td class="mono">${esc(c.method)} ${esc(c.path)}<div class="hint">${esc(c.name)}</div></td><td>${c.old.status}</td><td>${c.new.status}</td><td class="${STATUS[c.status].cls}">${STATUS[c.status].label}</td></tr>`).join('')}</tbody></table>
+  h=`${badge(st)}<h3>${esc(t.id)} · ${esc(t.name)}</h3>${typeBox(t.children.flatMap(typeDiffs))}<div class="meta">${esc(t.linear)}</div><p class="desc">${esc(t.simple)}</p>
+  <table><thead><tr><th>Call</th><th>Request</th><th>OLD</th><th>NEW</th><th>Result</th></tr></thead><tbody>${t.children.map((c,i)=>`<tr class="click" onclick="openM('${c.id}')"><td>${i+1} · ${esc(c.id)}</td><td class="mono">${esc(c.method)} ${esc(c.path)}<div class="hint">${esc(c.name)}</div></td><td>${c.old.status}</td><td>${c.new.status}</td><td class="${STATUS[c.status].cls}">${lbl(STATUS[c.status])}</td></tr>`).join('')}</tbody></table>
   <p class="hint">Click a call for its full report.</p><p><strong>${esc(t.verdict)}</strong></p>`}
  else {const st=STATUS[t.status];
-  h=`<span class="badge ${st.badge}">${st.label}</span><h3>${esc(t.id)} · ${esc(t.name)}</h3><div class="meta">${esc(t.linear)}</div>
+  h=`${badge(st)}<h3>${esc(t.id)} · ${esc(t.name)}</h3><div class="meta">${esc(t.linear)}</div>
   <div class="req"><div class="label">What we did</div><pre>${esc(t.sent)}</pre></div>
   <div class="sides"><div class="side"><h4>OLD</h4><pre>${esc(t.oldS)}</pre></div><div class="side"><h4>NEW</h4><pre>${esc(t.newS)}</pre></div></div>
   <p><strong>${esc(t.verdict)}</strong></p><p class="meta">Checked ${esc(t.time)}</p>`}
@@ -1043,11 +1048,11 @@ function openM(id){const f=find(id);if(!f)return;const t=f.t;let h='';
  document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden';location.hash=id;window.scrollTo(0,0);document.getElementById('modal').scrollTop=0}
 function closeM(){document.getElementById('modal').classList.remove('open');document.body.style.overflow='';if(location.hash)history.replaceState(null,'',location.pathname)}
 function render(){const c=s=>TESTS.filter(t=>t.status===s).length;const calls=TESTS.reduce((a,t)=>a+(t.children||[]).length,0);
- document.getElementById('banner').innerHTML=`<strong>In progress.</strong> ${c('pass')} pass · ${c('warn')} pass with shape ⚠ · ${c('fail')} fail · ${c('skip')} skipped · ${c('wait')} waiting. ${calls} API calls, each with its own report. Click a test for its call list, or an indented call row for the full OLD/NEW report.`;
+ document.getElementById('banner').innerHTML=`<strong>In progress.</strong> ${c('pass')} pass · ${c('warn')} pass with ! · ${c('fail')} fail · ${c('skip')} skipped · ${c('wait')} waiting. ${calls} API calls, each with its own report. Click a test for its call list, or an indented call row for the full OLD/NEW report.`;
  function rows(sec){const l=TESTS.filter(t=>t.section===sec);if(!l.length)return `<p class="sec-empty">Not started.</p>`;
   return `<table><thead><tr><th style="width:140px">Status</th><th>Test / API call</th><th style="width:170px">OLD → NEW</th></tr></thead><tbody>${l.map(t=>{const st=STATUS[t.status];
-   let r=`<tr class="click" onclick="openM('${t.id}')"><td class="${st.cls}">${st.label}</td><td><strong>${esc(t.id)}</strong> · ${esc(t.name)}<div class="hint">${esc(t.linear)}</div></td><td class="meta">${t.children?t.children.length+' call'+(t.children.length>1?'s':''):'no API call'}</td></tr>`;
-   for(const ch of (t.children||[])){const s2=STATUS[ch.status];r+=`<tr class="click child" onclick="openM('${ch.id}')"><td class="${s2.cls}">↳ ${s2.label}</td><td class="tname"><strong>${esc(ch.id)}</strong> · <span class="mono">${esc(ch.method)} ${esc(ch.path)}</span><div class="hint">${esc(ch.name)}</div></td><td class="meta">${ch.old.status} → ${ch.new.status}</td></tr>`}
+   let r=`<tr class="click" onclick="openM('${t.id}')"><td class="${st.cls}">${lbl(st)}</td><td><strong>${esc(t.id)}</strong> · ${esc(t.name)}<div class="hint">${esc(t.linear)}</div></td><td class="meta">${t.children?t.children.length+' call'+(t.children.length>1?'s':''):'no API call'}</td></tr>`;
+   for(const ch of (t.children||[])){const s2=STATUS[ch.status];r+=`<tr class="click child" onclick="openM('${ch.id}')"><td class="${s2.cls}">↳ ${lbl(s2)}</td><td class="tname"><strong>${esc(ch.id)}</strong> · <span class="mono">${esc(ch.method)} ${esc(ch.path)}</span><div class="hint">${esc(ch.name)}</div></td><td class="meta">${ch.old.status} → ${ch.new.status}</td></tr>`}
    return r}).join('')}</tbody></table>`}
  document.getElementById('main').innerHTML=`<h2>Preconditions</h2>${rows('pre')}<h2>§1 JWT</h2>${rows('jwt')}`+['§2 OTP / v2 auth','§3 Stripe','§4 Hours','§5 Worker pay','§6 Invoices / PDFs','§7 Regression'].map(x=>`<h2>${x}</h2><p class="sec-empty">Not started.</p>`).join('');
  const h=location.hash.slice(1);if(h)openM(h)}
