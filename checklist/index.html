@@ -42,7 +42,7 @@ tr.child td{background:#fcfcfb;font-size:15px}tr.child td.tname{padding-left:44p
 .diffs{background:#fef9c3;border-radius:8px;padding:10px 14px;margin:10px 0}
 .diff-type{color:#fb923c;font-weight:700}.diff-miss{color:#f87171;font-weight:700}.diffs .diff-type{color:#c2410c}.diffs .diff-miss{color:#dc2626}.jfold{color:#78716c}
 .okp{color:var(--grn);font-weight:700}.bang{display:inline-block;margin-left:6px;min-width:18px;text-align:center;font-weight:800;color:#854d0e;background:#facc15;border-radius:9px;padding:0 5px}
-.typebox{border:2px solid #f59e0b;background:#fffbeb;border-radius:8px;padding:10px 14px;margin:10px 0 14px}.typebox strong{color:#b45309}.typebox ul{margin:6px 0 0 18px;padding:0}.typebox li{margin:2px 0}
+.difftop{border-bottom:1px solid var(--line);margin:8px 0 14px;padding-bottom:6px}.difftop .sides{margin:8px 0}.dnotes{margin:4px 0 8px 18px;padding:0}.dnotes li{margin:3px 0}.t-type{color:#c2410c}.t-miss{color:#dc2626}.typebox{border:2px solid #f59e0b;background:#fffbeb;border-radius:8px;padding:10px 14px;margin:10px 0 14px}.typebox strong{color:#b45309}.typebox ul{margin:6px 0 0 18px;padding:0}.typebox li{margin:2px 0}
 .dtoggle{margin-left:10px;padding:3px 10px;border-radius:6px;border:1px solid #a8a29e;background:#fff;cursor:pointer;font-size:12px}
 </style>
 </head>
@@ -992,8 +992,15 @@ const TESTS=[
 const STATUS={pass:{cls:'ok',badge:'pass',label:'Pass'},warn:{cls:'warn',badge:'warn',label:'Pass'},fail:{cls:'fail',badge:'fail',label:'Fail'},wait:{cls:'wait',badge:'wait',label:'Waiting'},todo:{cls:'todo',badge:'todo',label:'Not started'},skip:{cls:'skip',badge:'skip',label:'Skipped'}};
 function lbl(st){return st.badge==='warn'?'<span class="okp">Pass</span><span class="bang">!</span>':st.label}
 function badge(st){return st.badge==='warn'?'<span class="badge pass">Pass</span><span class="bang">!</span>':`<span class="badge ${st.badge}">${st.label}</span>`}
-function typeDiffs(c){return parseDiffs(c.diffs).filter(d=>d.kind==='type').map(d=>{const m=d.text.match(/^(\S+?):\s*(.+?) vs (.+)$/);return {id:c.id,path:m?m[1]:'',o:m?m[2]:'',n:m?m[3]:'',text:d.text}})}
-function typeBox(l){return l.length?`<div class="typebox"><strong>Type differences</strong><ul>${l.map(d=>`<li>Call ${esc(d.id)} · <span class="mono">${esc(d.path||d.text)}</span>${d.o?` — OLD <b>${esc(d.o)}</b> · NEW <b>${esc(d.n)}</b>`:''}</li>`).join('')}</ul></div>`:''}
+function diffNotes(c){const ds=parseDiffs(c.diffs);const ty=[],miss=[],extra=[],oth=[];
+ ds.forEach(d=>{const p=(d.path||'').replace(/^\./,'')||'(body)';if(d.kind==='type'){const m=d.text.match(/^(\S+?):\s*(.+?) vs (.+)$/);ty.push(m?`<span class="mono">${esc(p)}</span> is <b>${esc(m[2])}</b> on OLD, <b>${esc(m[3])}</b> on NEW`:esc(d.text))}
+ else if(d.missingOn==='new')miss.push(p);else if(d.missingOn==='old')extra.push(p);else oth.push(esc(d.text))});
+ const L=[];ty.forEach(x=>L.push(`<li><b class="t-type">Type:</b> ${x}</li>`));
+ if(miss.length)L.push(`<li><b class="t-miss">Missing on NEW (OLD had it):</b> ${miss.map(x=>`<span class="mono">${esc(x)}</span>`).join(', ')}</li>`);
+ if(extra.length)L.push(`<li><b>Extra on NEW (fine, noted):</b> ${extra.map(x=>`<span class="mono">${esc(x)}</span>`).join(', ')}</li>`);
+ oth.forEach(x=>L.push(`<li>${x}</li>`));return L.length?`<ul class="dnotes">${L.join('')}</ul>`:''}
+function diffTop(c,label){if(!c.diffs||!c.diffs.length)return '';const d=parseDiffs(c.diffs);
+ return `<div class="difftop">${label?`<div class="label">${label}</div>`:'<div class="label">Differences (diff-only JSON)</div>'}<div class="sides"><div class="side"><h4>OLD</h4><pre>${bodyHtml(c.old.body,d,'old',true)}</pre></div><div class="side"><h4>NEW</h4><pre>${bodyHtml(c.new.body,d,'new',true)}</pre></div></div>${diffNotes(c)}</div>`}
 function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function hdrs(h){const k=Object.keys(h||{});return k.length?k.map(x=>x+': '+h[x]).join('\n'):'(none of interest)'}
 function find(id){for(const t of TESTS){if(t.id===id)return {t};for(const c of (t.children||[]))if(c.id===id)return {t:c,parent:t,n:t.children.indexOf(c)+1}}}
@@ -1003,13 +1010,13 @@ function parseDiffs(d){return (d||[]).map(x=>{let m=x.match(/^(\S+?):\s*(.+ vs .
  if(m){path=m[1];kind='type'}else if(m=x.match(/^(\S+) only on (NEW|OLD)$/)){path=m[1];kind='missing';side=m[2]==='NEW'?'old':'new'}
  else if(m=x.match(/^(\S+) missing on (NEW|OLD)$/)){path=m[1];kind='missing';side=m[2].toLowerCase()}else return {text:x,kind:'type',path:null};
  if(path==='root')path='';return {text:x,path,kind,missingOn:side}})}
-function bodyHtml(body,diffs,which){let j;try{j=JSON.parse(body)}catch(e){const d=diffs.find(x=>x.path==='');return d?`<span class="diff-${d.kind==='type'?'type':'miss'}">${esc(body)}</span>`:esc(body)}
+function bodyHtml(body,diffs,which,force){const DO=force||DIFFS_ONLY;let j;try{j=JSON.parse(body)}catch(e){const d=diffs.find(x=>x.path==='');return d?`<span class="diff-${d.kind==='type'?'type':'miss'}">${esc(body)}</span>`:esc(body)}
  const map={};const ph={};diffs.forEach(d=>{if(d.path===null)return;if(d.kind==='missing'&&d.missingOn===which){const i=Math.max(d.path.lastIndexOf('.'),d.path.lastIndexOf('['));const par=d.path.slice(0,i);const k=d.path.slice(i).replace(/^\./,'');(ph[par]=ph[par]||[]).push(k)}else map[d.path]=d.kind});
  const keys=Object.keys(map).concat(Object.keys(ph));const rel=p=>keys.some(k=>k===p||k.startsWith(p+'.')||k.startsWith(p+'['))||p==='';
  const wrap=(p,h)=>map[p]?`<span class="${map[p]==='type'?'diff-type':'diff-miss'}">${h}</span>`:h;
  function r(v,p,ind){const pad='  '.repeat(ind+1),end='  '.repeat(ind);
   if(v&&typeof v==='object'){const arr=Array.isArray(v);const ents=arr?v.map((x,i)=>[i,x]):Object.entries(v);let lines=[],skipped=0;
-   ents.forEach(([k,x])=>{const cp=arr?`${p}[${k}]`:`${p}.${k}`;if(DIFFS_ONLY&&!map[cp]&&!rel(cp)){skipped++;return}
+   ents.forEach(([k,x])=>{const cp=arr?`${p}[${k}]`:`${p}.${k}`;if(DO&&!map[cp]&&!rel(cp)){skipped++;return}
     const lab=arr?'':`"${esc(k)}": `;lines.push(pad+wrap(cp,lab+(map[cp]?esc(JSON.stringify(x,null,2)).replace(/\n/g,'\n'+pad):r(x,cp,ind+1))))});
    (ph[p]||[]).forEach(k=>lines.push(pad+`<span class="diff-miss">"${esc(k)}": «missing»</span>`));
    if(skipped)lines.push(pad+`<span class="jfold">… ${skipped} unchanged</span>`);
@@ -1027,7 +1034,7 @@ function sentHtml(c){const r=s=>`${esc(c.method)} ${esc(s.url)}\n${esc(hdrs(s.re
  return `<div class="req"><div class="label">What we sent</div><div class="sides"><div><div class="meta">OLD</div><pre>${r(c.old)}</pre></div><div><div class="meta">NEW</div><pre>${r(c.new)}</pre></div></div></div>`}
 function callHtml(c,n,parent){const st=STATUS[c.status];
  return `${badge(st)}
- <h3>${esc(c.id)} · Call ${n} · <span class="mono">${esc(c.method)} ${esc(c.path)}</span></h3>${typeBox(typeDiffs(c))}
+ <h3>${esc(c.id)} · Call ${n} · <span class="mono">${esc(c.method)} ${esc(c.path)}</span></h3>${diffTop(c)}
  <div class="meta">Part of ${esc(parent.id)} · ${esc(parent.name)} — ${esc(parent.linear)}</div>
  ${sentHtml(c)}
  <div class="label">What came back${c.diffs.length?`<button class="dtoggle" onclick="toggleDiffs('${c.id}')">${DIFFS_ONLY?'Show full JSON':'Show diffs only'}</button>`:''}</div><div class="sides">${sideHtml(c.old,parseDiffs(c.diffs),'old')}${sideHtml(c.new,parseDiffs(c.diffs),'new')}</div>
@@ -1036,7 +1043,7 @@ function callHtml(c,n,parent){const st=STATUS[c.status];
 function openM(id){const f=find(id);if(!f)return;const t=f.t;let h='';
  if(f.parent) h=callHtml(t,f.n,f.parent);
  else if(t.children){const st=STATUS[t.status];
-  h=`${badge(st)}<h3>${esc(t.id)} · ${esc(t.name)}</h3>${typeBox(t.children.flatMap(typeDiffs))}<div class="meta">${esc(t.linear)}</div><p class="desc">${esc(t.simple)}</p>
+  h=`${badge(st)}<h3>${esc(t.id)} · ${esc(t.name)}</h3>${t.children.filter(c=>c.diffs&&c.diffs.length).map(c=>diffTop(c,`${esc(c.id)} · ${esc(c.method)} ${esc(c.path)} — differences`)).join('')}<div class="meta">${esc(t.linear)}</div><p class="desc">${esc(t.simple)}</p>
   <table><thead><tr><th>Call</th><th>Request</th><th>OLD</th><th>NEW</th><th>Result</th></tr></thead><tbody>${t.children.map((c,i)=>`<tr class="click" onclick="openM('${c.id}')"><td>${i+1} · ${esc(c.id)}</td><td class="mono">${esc(c.method)} ${esc(c.path)}<div class="hint">${esc(c.name)}</div></td><td>${c.old.status}</td><td>${c.new.status}</td><td class="${STATUS[c.status].cls}">${lbl(STATUS[c.status])}</td></tr>`).join('')}</tbody></table>
   <p class="hint">Click a call for its full report.</p><p><strong>${esc(t.verdict)}</strong></p>`}
  else {const st=STATUS[t.status];
