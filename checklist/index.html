@@ -133,7 +133,7 @@ const TESTS = [
       status: 200,
       body: 'STRIPE_SECRET=sk_test_… · STRIPE_USA_SECRET=sk_test_…',
       ok: true,
-      note: 'Publishable STRIPE_KEY / pk_test_ not provided yet.'
+      note: 'No STRIPE_KEY/pk_* in local .env (only STRIPE_SECRET + STRIPE_USA_SECRET).'
     },
     new: {
       label: 'NEW · staging5',
@@ -144,7 +144,7 @@ const TESTS = [
       note: 'tok_visa only works with test secrets — staging5 STRIPE_SECRET is test mode.'
     },
     time: '2026-10-29 11:47 MST',
-    verdict: 'Pass for secrets (sk_test_ local + staging5 accepts tok_visa). FE pk_test_ still pending if needed.'
+    verdict: 'Pass — sk_test_ local + staging5 tok_visa. No local pk_*; FE publishable not in this .env.'
   },
   {
     id: 'P4',
