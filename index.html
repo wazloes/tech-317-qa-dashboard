@@ -41,6 +41,16 @@ tbody tr.click{cursor:pointer}tbody tr.click:hover{background:#f8f7f5}
 details{margin-top:24px;border-top:1px solid var(--line);padding-top:16px}summary{cursor:pointer;color:var(--mute);font-weight:500}
 pre{background:#1c1917;color:#e7e5e4;padding:14px;border-radius:8px;font-size:12px;overflow:auto;max-height:420px}
 .nr{padding:12px 16px;font-size:14px;color:#44403c}
+.hero{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin-bottom:8px}
+.hero h2{margin:0 0 6px;font-size:22px}.bk{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.bk>div{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fff;cursor:pointer}.bk>div:hover{background:#f8f7f5}
+.bk .n{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}.bk .t{font-weight:600}.bk .d{font-size:13px;color:var(--mute)}
+.bk .look{border-left:4px solid var(--red)}.bk .look .n{color:var(--red)}
+.note{border-left:4px solid var(--amb);background:var(--ambbg);padding:12px 16px;border-radius:6px;font-size:14px;margin:14px 0}
+.call{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;word-break:break-all;margin:4px 0 8px}.call b{color:var(--ink)}
+.cmp pre{max-height:280px;margin:6px 0 0;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.lbl{font-size:12px;color:var(--mute);margin-top:10px;font-weight:600}
+.hl{background:#fde68a;border-radius:3px}.shp{margin:6px 0 0 18px;padding:0;font-size:14px}
 </style></head><body><div class="wrap">
 <h1>TECH-317 — OLD API vs NEW API</h1>
 <p class="sub">Batch 1, round 2. Every test sends the same request to OLD (Laravel) and NEW (staging5) and compares the answers. 144 tests.</p>
@@ -64,12 +74,36 @@ SECS.push({key:'both',title:'Bugs in both',cases:both});
 const esc=t=>String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const badge=v=>`<span class="b v-${v}">${LBL[v]||v}</span>`;
 const findC=(k,id)=>{const s=SECS.find(x=>x.key===k);return s&&s.cases.find(c=>c.id===id)};
-let filt=null;
+const BK={look:['Needs a look','Status differs, a field type differs, NEW is missing a field, or the spec check failed. These are the real candidates.'],
+noise:['Different DB values only','Only values differ (ids, timestamps, lat/lng, addresses, debug trace on 500s). Same shape. Not a NEW bug.'],
+extra:['NEW adds fields only','Same types, nothing missing — NEW just returns extra fields (e.g. hubspot_*). Additive, low risk.'],
+ok:['Matched or intended','Same answer, or a documented intended change.'],
+incomplete:['Incomplete / broken test','Only part ran, or the harness itself failed. Says nothing yet.'],
+norun:['Didn’t run','Blocked (no SMS code, missing setup) or skipped this round.']};
+const BKO=['look','noise','extra','ok','incomplete','norun'];
+let filt=null,bfilt=null;
 function route(){const [k,id]=location.hash.slice(1).split('/');
  document.getElementById('nav').innerHTML=`<a href="#" class="${!k?'on':''}">Overview</a>`+SECS.map(s=>`<a href="#${s.key}" class="${k===s.key?'on':''}">${s.title} <span class="meta">${s.cases.length}</span></a>`).join('');
  if(!k)hub();else sec(k);
  if(id){const c=findC(k,id);c?openM(k,c):closeM(true)}else closeM(true)}
-function hub(){const cols=ORDER;
+function hub(){const cols=ORDER;const all=S.flatMap(s=>s.cases.map(c=>({...c,_s:s.key})));const N={};all.forEach(c=>N[c.bucket]=(N[c.bucket]||0)+1);
+ const mm=all.filter(c=>c.verdict==='MISMATCH'),mmReal=mm.filter(c=>c.bucket==='look').length;
+ let h=`<div class="hero"><h2>NEW is not 80% broken. ${N.look||0} of ${all.length} tests need a real look.</h2>
+ <div class="meta">The raw run flagged ${mm.length} tests “Different”. Re-read by <b>shape</b> (same status, same field types, no missing fields) instead of exact values: <b>${mmReal}</b> are real shape/status differences, <b>${mm.filter(c=>c.bucket==='noise').length}</b> differ only in DB values, <b>${mm.filter(c=>c.bucket==='extra').length}</b> only add fields on NEW. ${(N.norun||0)+(N.incomplete||0)} tests didn’t fully run.</div>
+ <div class="note"><b>Why the raw report looked so bad:</b> round-2 verdicts compared response bodies value-by-value. OLD (local :8001) and NEW (staging5) use different databases, so ids, hubspot ids, addresses, lat/lng and timestamps always differ. The right check is shape: status matches, every field OLD returns is still there on NEW, with the same type. Buckets below use that rule on the existing diffs — the stored test verdicts were not changed.</div>
+ <div class="bk">${BKO.map(b=>`<div class="${b}" onclick="bfilt='${b}';route()"><div class="n">${N[b]||0}</div><div class="t">${BK[b][0]}</div><div class="d">${BK[b][1]}</div></div>`).join('')}</div></div>
+ ${bfilt?bucketList(all):''}
+ <h2>Sections</h2><table><thead><tr><th>Section</th><th class="num">Tests</th>${BKO.map(b=>`<th class="num">${BK[b][0]}</th>`).join('')}</tr></thead><tbody>`;
+ SECS.filter(s=>s.key!=='both').forEach(s=>{const n={};s.cases.forEach(c=>n[c.bucket]=(n[c.bucket]||0)+1);
+  h+=`<tr class="click" onclick="location.hash='${s.key}'"><td class="tname">${s.title}</td><td class="num">${s.cases.length}</td>${BKO.map(b=>`<td class="num ${n[b]?'':'zero'}">${n[b]?(b==='look'?`<b style="color:var(--red)">${n[b]}</b>`:n[b]):'—'}</td>`).join('')}</tr>`});
+ h+=`</tbody></table><h2>Raw round-2 verdicts (value diff)</h2><table><thead><tr><th>Section</th><th class="num">Tests</th>${cols.map(v=>`<th class="num">${LBL[v]}</th>`).join('')}</tr></thead><tbody>`;
+ SECS.forEach(s=>{const n={};s.cases.forEach(c=>n[c.verdict]=(n[c.verdict]||0)+1);
+  h+=`<tr class="click" onclick="location.hash='${s.key}'"><td class="tname">${s.title}</td><td class="num">${s.cases.length}</td>${cols.map(v=>`<td class="num ${n[v]?'':'zero'}">${n[v]||'—'}</td>`).join('')}</tr>`});
+ h+=`</tbody></table><p class="meta">Sections in Batch 1 order. Click a row for its tests (worst first).</p>
+ <h2>Raw verdict labels</h2><div class="legend">${ORDER.map(v=>`<div>${badge(v)}</div><div>${DEF[v]}</div>`).join('')}</div>`;
+ document.getElementById('main').innerHTML=h}
+function bucketList(all){const L=all.filter(c=>c.bucket===bfilt);return `<h2>${BK[bfilt][0]} (${L.length}) <button class="close" style="float:none;width:auto;padding:0 10px;font-size:13px" onclick="bfilt=null;route()">clear</button></h2><table><tbody>${L.map(c=>`<tr class="click" onclick="location.hash='${c._s}/${c.id}'"><td style="width:140px">${badge(c.verdict)}</td><td class="tid" style="width:80px">${c.id}</td><td><div class="tname">${esc(c.name)}</div><div class="why">${esc(c.shape.length?c.shape.slice(0,3).join(' · ')+(c.shape_n>3?` · +${c.shape_n-3} more`:''):c.why)}</div></td></tr>`).join('')}</tbody></table>`}
+function hubOLD(){const cols=ORDER;
  let h=`<h2 style="margin-top:0">Sections</h2><table><thead><tr><th>Section</th><th class="num">Tests</th>${cols.map(v=>`<th class="num">${LBL[v]}</th>`).join('')}</tr></thead><tbody>`;
  SECS.forEach(s=>{const n={};s.cases.forEach(c=>n[c.verdict]=(n[c.verdict]||0)+1);
   h+=`<tr class="click" onclick="location.hash='${s.key}'"><td class="tname">${s.title}</td><td class="num">${s.cases.length}</td>${cols.map(v=>`<td class="num ${n[v]?'':'zero'}">${n[v]?`<b style="color:var(--${/BUG|MISM/.test(v)?'red':/INVAL|PART/.test(v)?'amb':v==='PASS'?'grn':v==='EXPECTED-DIFF'?'blu':'gry'})">${n[v]}</b>`:'—'}</td>`).join('')}</tr>`});
@@ -89,16 +123,42 @@ function probeHtml(p){
  let d='';if(p.diffs.length){d=`<table class="dt"><thead><tr><th>Field</th><th>OLD</th><th>NEW</th></tr></thead><tbody>${p.diffs.map(x=>`<tr><td>${esc(x.path.replace('$body.',''))}${x.cls&&x.cls!=='unexplained'?` <span class="meta">(${esc(x.cls)})</span>`:''}</td><td class="o">${x.kind==='added'?'<i>missing</i>':esc(x.old)}</td><td class="n">${x.kind==='removed'?'<i>missing</i>':esc(x.new)}</td></tr>`).join('')}</tbody></table>${p.diff_count>p.diffs.length?`<div class="nr">+${p.diff_count-p.diffs.length} more differing fields (see full capture)</div>`:''}`}
  return `<div class="probe"><div class="ph">${badge(p.verdict)}<b>${p.id}</b> ${esc(p.intent)}</div>
  <div class="cmp"><div><div class="side">OLD</div><div class="code ${sd?'diff':''}">${p.old_status??'—'}</div>${e(p.exp_old)}</div><div><div class="side">NEW</div><div class="code ${sd?'diff':''}">${p.new_status??'—'}</div>${e(p.exp_new)}</div></div>${d}</div>`}
-function openM(k,c){const v=c.verdict;const cls=/BUG|MISM/.test(v)?'':/INVAL|PART|BLOCK|SKIP/.test(v)?'warn':v==='PASS'?'ok':'info';
- const bad=c.probes.filter(p=>p.verdict!=='PASS'),good=c.probes.filter(p=>p.verdict==='PASS');
+const BKWHY={look:'Real difference by shape rules (status, field type, or missing field) — see the list below.',noise:'Only values differ between the two databases. Same status, same fields, same types. Not a NEW bug.',extra:'NEW returns the same fields with the same types, plus a few extra fields. Nothing OLD clients need is missing.',ok:'',incomplete:'',norun:''};
+const pj=x=>esc(JSON.stringify(x,null,2));
+function sideHtml(nm,sd,hl){if(!sd)return `<div><div class="side">${nm}</div><div class="meta">no call</div></div>`;const q=sd.request||{},r=sd.response||{};
+ let body=pj(r.body??r.body_ref??null);hl.forEach(k=>{body=body.split('&quot;'+esc(k)+'&quot;').join('<span class="hl">&quot;'+esc(k)+'&quot;</span>')});
+ return `<div><div class="side">${nm}</div><div class="call"><b>${esc(q.method)}</b> ${esc(q.url)}</div>
+ <div class="lbl">Request body</div><pre>${q.body==null?'(none)':pj(q.body)}</pre>
+ <div class="lbl">Response</div><div class="code">${sd.transport_error?'ERR':r.status??'—'}</div><pre>${body}</pre>${r.truncated?'<div class="meta">body truncated in capture</div>':''}</div>`}
+function claimsHtml(x){if(!x||!x.jwt_claims)return '';const o=x.jwt_claims.old||{},n=x.jwt_claims.new||{};const op=o.payload||{},np=n.payload||{};
+ const ks=[...new Set([...Object.keys(op),...Object.keys(np)])];const ty=v=>v===undefined?'missing':v===null?'null':typeof v;
+ return `<div class="lbl" style="padding:0 16px">Decoded token claims (raw body only shows a redacted token)</div><table class="dt"><thead><tr><th>Claim</th><th>OLD</th><th>NEW</th><th>Shape</th></tr></thead><tbody>${ks.map(k=>{const t1=ty(op[k]),t2=ty(np[k]);const bad=t1!==t2;
+ return `<tr><td>${esc(k)}</td><td class="o">${esc(JSON.stringify(op[k]))} <span class="meta">${t1}</span></td><td class="n">${esc(JSON.stringify(np[k]))} <span class="meta">${t2}</span></td><td>${bad?`<b style="color:var(--red)">type differs</b>`:'<span class="meta">same type</span>'}</td></tr>`}).join('')}</tbody></table>`}
+function diffKind(e){const p=e.path.split(' ').pop();if(p==='$status')return['Status differs','r'];if(e.kind==='changed')return['Value only (DB data)','m'];
+ if(e.kind==='type'&&(e.old==null||e.new==null))return['Null on one side (data)','m'];if(e.kind==='type')return['Type differs','r'];if(e.kind==='added')return['Extra on NEW','m'];if(e.kind==='removed')return[/\.(exception|file|line|trace)$/.test(p)?'Debug trace (env)':'Missing on NEW',/\.(exception|file|line|trace)$/.test(p)?'m':'r'];return[e.kind,'m']}
+function fullProbe(p,meta){const ents=(p.diff&&p.diff.entries)||[];
+ if(p.status!=='ran')return `<div class="probe"><div class="ph">${badge(p.verdict||'BLOCKED')}<b>${p.probe_id}</b> ${esc(p.intent)}</div><div class="nr">Not run — ${esc((p.not_run&&(p.not_run.reason||p.not_run.reason_code))||p.status)}</div></div>`;
+ const real=ents.filter(e=>diffKind(e)[1]==='r'),hl=real.map(e=>e.path.split(' ').pop().split('.').pop().replace(/\[\d+\]$/,''));
+ const ec=p.expectation_check||{};const spec=(ec.old&&ec.old!=='met'&&ec.old!=='n/a')||(ec.new&&ec.new!=='met'&&ec.new!=='n/a');
+ let plain=real.length?`<b>${real.length} real shape difference${real.length>1?'s':''}</b>: ${real.slice(0,4).map(e=>`<code>${esc(e.path.split(' ').pop().replace('$body.',''))}</code> ${diffKind(e)[0].toLowerCase()}${e.kind==='type'?` (OLD ${esc(JSON.stringify(e.old))} vs NEW ${esc(JSON.stringify(e.new))})`:''}`).join('; ')}${real.length>4?'…':''}.`:ents.length?`Only values/extra fields differ (${ents.length}) — same shape. Env noise.`:'';
+ if(spec)plain+=` Spec check: OLD ${esc(ec.old)}, NEW ${esc(ec.new)}${ec.evidence?` — ${esc(ec.evidence)}`:''}.`;
+ return `<div class="probe"><div class="ph">${badge(p.verdict)}<b>${p.probe_id}</b> ${esc(p.intent)}</div>
+ ${plain?`<div class="nr">${plain}</div>`:''}
+ <div class="cmp">${sideHtml('OLD',p.old,hl)}${sideHtml('NEW',p.new,hl)}</div>${claimsHtml(p.section_extras)}
+ ${ents.length?`<table class="dt"><thead><tr><th>Field</th><th>OLD</th><th>NEW</th><th>What it is</th></tr></thead><tbody>${ents.slice(0,40).map(e=>{const [t,c]=diffKind(e);return `<tr><td>${esc(e.path.split(' ').pop().replace('$body.',''))}</td><td class="o">${e.kind==='added'?'<i>missing</i>':esc(JSON.stringify(e.old))}</td><td class="n">${e.kind==='removed'?'<i>missing</i>':esc(JSON.stringify(e.new))}</td><td>${c==='r'?`<b style="color:var(--red)">${t}</b>`:`<span class="meta">${t}</span>`}</td></tr>`}).join('')}</tbody></table>${ents.length>40?`<div class="nr">+${ents.length-40} more (see raw capture)</div>`:''}`:''}</div>`}
+function openM(k,c){const v=c.verdict;const cls=c.bucket==='look'?'':c.bucket==='noise'||c.bucket==='extra'||c.bucket==='ok'?'ok':'warn';
+ const B=BK[c.bucket]||['',''];
  document.getElementById('mbox').innerHTML=`<button class="close" onclick="location.hash='${k}'">×</button>${badge(v)} <span class="tid">${c.id}</span>
  <h3>${esc(c.name)}</h3><div class="meta">${esc(c.intent)}</div>
- <div class="issue ${cls}"><b>${LBL[v]}:</b> ${esc(c.why)}<div class="meta" style="margin-top:6px">${DEF[v]}</div></div>
- <div class="meta"><b>Expected:</b> ${esc(c.expected)} · ${c.coverage.ran} of ${c.coverage.planned} checks ran</div>
- ${bad.length?`<h2 style="margin-top:24px">Checks with problems (${bad.length})</h2>${bad.map(probeHtml).join('')}`:''}
- ${good.length?`<details><summary>Checks that matched (${good.length})</summary>${good.map(probeHtml).join('')}</details>`:''}
- <details ontoggle="if(this.open&&!this.dataset.l){this.dataset.l=1;fetch('data/cases/${c._sec||k}/${c.id}.json').then(r=>r.json()).then(j=>this.querySelector('pre').textContent=JSON.stringify(j,null,2))}"><summary>Full capture (raw requests &amp; responses)</summary><p class="meta">${esc(c.reason)}</p><pre>Loading…</pre></details>`;
- document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden'}
+ <div class="issue ${cls}"><b>${B[0]}.</b> ${esc(BKWHY[c.bucket]||c.why)}
+ ${c.shape&&c.shape.length?`<ul class="shp">${c.shape.map(x=>`<li>${esc(x)}</li>`).join('')}${c.shape_n>c.shape.length?`<li>+${c.shape_n-c.shape.length} more</li>`:''}</ul>`:''}
+ <div class="meta" style="margin-top:8px">Raw round-2 verdict: ${LBL[v]} — ${esc(c.why)}. (Raw verdicts used exact value diffs.)</div></div>
+ <div class="meta"><b>Expected:</b> ${esc(c.expected)} · ${c.coverage.ran} of ${c.coverage.planned} checks ran</div><div id="pbody"><p class="meta">Loading calls…</p></div>`;
+ document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden';
+ fetch(`data/cases/${c._sec||k}/${c.id}.json`).then(r=>r.json()).then(j=>{const P=j.probes||[];const bad=P.filter(p=>p.verdict!=='PASS'),good=P.filter(p=>p.verdict==='PASS');
+ document.getElementById('pbody').innerHTML=`${bad.length?`<h2 style="margin-top:24px">Checks with problems (${bad.length})</h2>${bad.map(fullProbe).join('')}`:''}
+ ${good.length?`<details><summary>Checks that matched (${good.length})</summary>${good.map(fullProbe).join('')}</details>`:''}
+ <details><summary>Full raw capture (setup, probes, teardown)</summary><p class="meta">${esc(c.reason)}</p><pre>${pj(j)}</pre></details>`}).catch(e=>{document.getElementById('pbody').innerHTML='<p class="meta">Could not load capture: '+esc(e)+'</p>'})}
 function closeM(silent){document.getElementById('modal').classList.remove('open');document.body.style.overflow=''}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&location.hash.includes('/'))location.hash=location.hash.split('/')[0].slice(1)});
 let last='';window.addEventListener('hashchange',()=>{const k=location.hash.slice(1).split('/')[0];if(k!==last)filt=null;last=k;route()});route();
