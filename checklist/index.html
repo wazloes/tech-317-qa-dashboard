@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TECH-317 checklist</title>
+<style>
+:root{--bg:#fafaf9;--card:#fff;--ink:#1c1917;--mute:#78716c;--line:#e7e5e4;--soft:#f5f5f4;
+--grn:#15803d;--grnbg:#f0fdf4;--amb:#b45309;--ambbg:#fffbeb;--red:#b91c1c;--redbg:#fef2f2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:40px 28px 80px}
+h1{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}h2{font-size:20px;margin:36px 0 12px}
+.sub{color:var(--mute);margin:0 0 24px}
+.banner{background:var(--grnbg);border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;margin:0 0 28px}
+.banner.warn{background:var(--ambbg);border-color:#fde68a}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{text-align:left;font-size:13px;font-weight:600;color:var(--mute);padding:12px 16px;border-bottom:1px solid var(--line);background:var(--soft)}
+td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}
+.ok{color:var(--grn);font-weight:600}.wait{color:var(--amb);font-weight:600}.todo{color:var(--mute)}
+.meta{color:var(--mute);font-size:14px}
+.evidence{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-top:12px}
+.evidence h3{margin:0 0 10px;font-size:16px}
+.evidence dl{display:grid;grid-template-columns:120px 1fr;gap:8px 16px;margin:0}
+.evidence dt{color:var(--mute);font-size:14px}.evidence dd{margin:0;font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-word}
+a{color:#1d4ed8}
+.sec-empty{color:var(--mute);padding:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>TECH-317 checklist</h1>
+<p class="sub">Linear story on staging5 — one box at a time. Updated as we go. Source: <a href="https://linear.app/faberconnect/issue/TECH-317/qa-waz-payments-hourstimecards-invoicing-pdfs-authotpjwt-on-staging5">TECH-317</a>.</p>
+
+<div class="banner">
+<strong>In progress.</strong> 1 precondition passed (P1). Next: P2 — confirm <code>APP_ENV</code> ≠ production on Forge.
+</div>
+
+<h2>Progress</h2>
+<table>
+<thead><tr><th>Bucket</th><th>Count</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td class="ok">Passed</td><td>1</td><td>P1</td></tr>
+<tr><td>Failed</td><td>0</td><td>—</td></tr>
+<tr><td class="wait">Waiting</td><td>1</td><td>P2 needs Forge</td></tr>
+<tr><td class="todo">Not started</td><td>—</td><td>P3–P7 · §§1–7</td></tr>
+</tbody>
+</table>
+
+<h2>Preconditions</h2>
+<table>
+<thead><tr><th style="width:90px">Status</th><th>Item</th><th>Evidence</th></tr></thead>
+<tbody>
+<tr>
+  <td class="ok">Pass</td>
+  <td><strong>P1</strong> · <code>GET https://staging5.faberconnect.com/up</code> returns 200</td>
+  <td>200 OK · body <code>OK</code> · 2026-10-29 11:33 MST</td>
+</tr>
+<tr>
+  <td class="wait">Waiting</td>
+  <td><strong>P2</strong> · staging5 <code>APP_ENV</code> ≠ <code>production</code> (note if <code>testing</code>)</td>
+  <td>Needs Forge / someone with .env access</td>
+</tr>
+<tr>
+  <td class="todo">Not started</td>
+  <td><strong>P3</strong> · Stripe keys are test keys (<code>sk_test_</code> / <code>pk_test_</code>)</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td class="todo">Not started</td>
+  <td><strong>P4</strong> · <code>VOPAY_API_URL</code> is sandbox (else skip Pay workers)</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td class="todo">Not started</td>
+  <td><strong>P5</strong> · Queue workers <code>faber-queue-l13</code> (+ named <code>-l13</code>) running</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td class="todo">Not started</td>
+  <td><strong>P6</strong> · HubSpot token is sandbox or blank</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td class="todo">Not started</td>
+  <td><strong>P7</strong> · wkhtmltopdf OpenSSL 3 jammy build on staging5</td>
+  <td>—</td>
+</tr>
+</tbody>
+</table>
+
+<div class="evidence">
+<h3>P1 evidence</h3>
+<dl>
+  <dt>Result</dt><dd>Pass</dd>
+  <dt>Request</dt><dd>GET https://staging5.faberconnect.com/up</dd>
+  <dt>Response</dt><dd>HTTP 200 · body: OK</dd>
+  <dt>Time</dt><dd>2026-10-29 11:33:57 MST</dd>
+  <dt>Linear</dt><dd>Box ticked on TECH-317</dd>
+</dl>
+</div>
+
+<h2>§1 JWT</h2>
+<p class="sec-empty">Not started. Boxes land here as we run them.</p>
+<h2>§2 OTP / v2 auth</h2>
+<p class="sec-empty">Not started.</p>
+<h2>§3 Stripe</h2>
+<p class="sec-empty">Not started.</p>
+<h2>§4 Hours</h2>
+<p class="sec-empty">Not started.</p>
+<h2>§5 Worker pay</h2>
+<p class="sec-empty">Not started.</p>
+<h2>§6 Invoices / PDFs</h2>
+<p class="sec-empty">Not started.</p>
+<h2>§7 Regression</h2>
+<p class="sec-empty">Not started.</p>
+
+<p class="meta" style="margin-top:40px">HTML only · personal GitHub Pages · not a Grok Page.</p>
+</div>
+</body>
+</html>
