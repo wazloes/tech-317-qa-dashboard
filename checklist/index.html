@@ -487,10 +487,8 @@ function render(){
   const failed=TESTS.filter(t=>t.status==='fail').length;
   const skipped=TESTS.filter(t=>t.status==='skip').length;
   const waiting=TESTS.filter(t=>t.status==='wait').length;
-  const next=TESTS.find(t=>t.status==='todo'||t.status==='wait');
-  const nextLabel=next?`${next.id} (${next.name})`:'next Linear box';
   document.getElementById('banner').innerHTML=
-    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: ${esc(nextLabel)}. Click any row for details.`;
+    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: expired-token refresh. Click any row for details.`;
 
   function rowsFor(sec){
     const list=TESTS.filter(t=>t.section===sec);
@@ -511,8 +509,7 @@ function render(){
     <tbody>${rows}</tbody></table>`;
   }
 
-  document.getElementById('app').innerHTML=`
-    <div class="banner" id="banner"></div>
+  document.getElementById('main').innerHTML=`
     <table class="sum"><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>
       <tr><td class="ok">Pass</td><td>${passed}</td></tr>
       <tr><td class="fail">Fail</td><td>${failed}</td></tr>
@@ -537,9 +534,6 @@ function render(){
     <h2>§7 Regression</h2>
     ${rowsFor('reg')}
   `;
-  // re-set banner after innerHTML wiped it
-  document.getElementById('banner').innerHTML=
-    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: expired-token refresh-in-header. Click any row for details.`;
   const h=location.hash.slice(1); if(h) openM(h);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
