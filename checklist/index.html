@@ -177,11 +177,28 @@ const TESTS = [
     id: 'P5',
     section: 'pre',
     name: 'Queue workers running',
-    status: 'todo',
+    status: 'pass',
     linear: 'P5 · faber-queue-l13 workers running',
     simple: 'Confirm staging5 queue workers (faber-queue-l13 and named -l13 queues) are up after last deploy.',
-    sent: null, old: null, new: null, time: null,
-    verdict: 'Not started.'
+    sent: { method: 'Forge UI', url: 'Processes → Background processes', body: 'Screenshot from Waz' },
+    old: {
+      label: 'OLD · local',
+      url: '—',
+      status: null,
+      body: 'N/A — local uses sync/queue not Forge daemons.',
+      ok: true,
+      note: 'Precondition is staging5-only.'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: 'Forge Processes',
+      status: 200,
+      body: 'faber-queue-staging5-worker — Running (1 process)',
+      ok: true,
+      note: 'Matches staging5 queue worker daemon.'
+    },
+    time: '2026-10-29 11:51 MST',
+    verdict: 'Pass — staging5 queue worker running in Forge.'
   },
   {
     id: 'P6',
