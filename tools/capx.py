@@ -20,10 +20,10 @@ def mk(CALLS,AT):
   return cc
 L=lambda n:'abcdefghijklmnopqrstuvwxyz'[n]
 def push(OUT,sec_prefix_re,newsecs=()):
-  js='\n'.join('TESTS.push('+json.dumps(t,ensure_ascii=False)+');' for t in OUT).replace('</','<\\/')
+  js='\n'.join('TESTS.push('+json.dumps(t,ensure_ascii=False)+');' for t in OUT).replace('<','\\u003c')
   assert 'eyJ' not in js and not re.search(r'[0-9a-f]{32}',js) and 'AKIA' not in js
   p='checklist/index.html';h=open(p).read()
-  h=re.sub(r'\nTESTS\.push\(\{"id": "'+sec_prefix_re+r'[^\n]*','',h)
+  h=re.sub(r'\nTESTS\.push\(\{"id": "(?:'+sec_prefix_re+r')[^\n]*','',h)
   m=h.rfind("\ndocument.addEventListener('keydown'"); h=h[:m]+'\n'+js+h[m:]
   for s in newsecs:
     if f"'{s}'" not in h.split('const OPEN_SECS=')[1].split(';')[0]: h=h.replace("'reg'])","'"+s+"','reg'])",1)
