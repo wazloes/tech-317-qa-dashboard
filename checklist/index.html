@@ -8,7 +8,7 @@
 :root{--bg:#fafaf9;--card:#fff;--ink:#1c1917;--mute:#78716c;--line:#e7e5e4;--soft:#f5f5f4;
 --grn:#15803d;--grnbg:#f0fdf4;--amb:#b45309;--ambbg:#fffbeb;--red:#b91c1c;--redbg:#fef2f2}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.wrap{max-width:920px;margin:0 auto;padding:40px 28px 80px}
+.wrap{max-width:1100px;margin:0 auto;padding:40px 28px 80px}
 h1{font-size:28px;margin:0 0 6px}h2{font-size:20px;margin:36px 0 12px}
 .sub{color:var(--mute);margin:0 0 24px}
 .banner{background:var(--grnbg);border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;margin:0 0 28px}
@@ -19,7 +19,7 @@ tbody tr.click{cursor:pointer}tbody tr.click:hover{background:#f8f7f5}
 .ok{color:var(--grn);font-weight:600}.wait{color:var(--amb);font-weight:600}.todo{color:var(--mute)}.fail{color:var(--red);font-weight:600}.skip{color:var(--mute);font-weight:600}
 .meta{color:var(--mute);font-size:14px}.hint{color:var(--mute);font-size:13px;margin:8px 0 0}
 .modal{position:fixed;inset:0;background:rgba(28,25,23,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:9}
-.modal.open{display:flex}.box{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal.open{display:flex}.box{background:#fff;border-radius:14px;max-width:1100px;width:100%;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .box h3{font-size:22px;margin:8px 0 4px}.close{float:right;border:0;background:var(--soft);border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}
 .desc{font-size:16px;margin:12px 0 20px}
 .sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
@@ -34,6 +34,12 @@ tbody tr.click{cursor:pointer}tbody tr.click:hover{background:#f8f7f5}
 .badge.pass{color:var(--grn);background:var(--grnbg)}.badge.fail{color:var(--red);background:var(--redbg)}.badge.wait{color:var(--amb);background:var(--ambbg)}.badge.todo{color:var(--mute);background:var(--soft)}.badge.skip{color:#57534e;background:#f5f5f4}
 .sec-empty{color:var(--mute);padding:8px 0}
 a{color:#1d4ed8}
+.warn{color:#a16207;font-weight:600}.badge.warn{color:#a16207;background:#fef9c3}
+tr.child td{background:#fcfcfb;font-size:15px}tr.child td.tname{padding-left:44px}
+.call{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.call h4{margin:0 0 6px;font-size:17px}.mono{font-family:ui-monospace,Menlo,monospace}
+.side pre,.req pre{max-height:520px}
+.diffs{background:#fef9c3;border-radius:8px;padding:10px 14px;margin:10px 0}
 </style>
 </head>
 <body>
@@ -51,493 +57,977 @@ a{color:#1d4ed8}
 </div>
 
 <script>
-const TESTS = [
-  {
-    id: 'P1',
-    section: 'pre',
-    name: 'Health check `/up`',
-    status: 'pass',
-    linear: 'P1 · GET staging5 /up returns 200',
-    simple: 'Hit the health URL on both servers. NEW must return 200. OLD (Laravel 5.7) has no `/up` route, so 404 there is expected.',
-    sent: {
-      method: 'GET',
-      path: '/up',
-      body: null,
-      note: 'No body. No auth.'
+const TESTS=[
+ {
+  "id": "P1",
+  "section": "pre",
+  "name": "Health check /up",
+  "linear": "P1 \u00b7 GET staging5 /up returns 200",
+  "simple": "Hit /up on both servers. NEW must be 200.",
+  "note": "",
+  "children": [
+   {
+    "method": "GET",
+    "path": "/up",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 404 / NEW 200 (expected 200).",
+    "diffs": [],
+    "note": "OLD Laravel 5.7 has no /up route \u2014 404 there is expected; Linear box only needs NEW 200.",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/up",
+     "status": 404,
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": "{\n  \"message\": \"\",\n  \"exception\": \"Symfony\\\\Component\\\\HttpKernel\\\\Exception\\\\NotFoundHttpException\",\n  \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/RouteCollection.php\",\n  \"line\": 179,\n  \"trace\": [\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Router.php\",\n      \"line\": 636,\n      \"function\": \"match\",\n      \"class\": \"Illuminate\\\\Routing\\\\RouteCollection\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Router.php\",\n      \"line\": 625,\n      \"function\": \"findRoute\",\n      \"class\": \"Illuminate\\\\Routing\\\\Router\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Router.php\",\n      \"line\": 614,\n      \"function\": \"dispatchToRoute\",\n      \"class\": \"Illuminate\\\\Routing\\\\Router\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php\",\n      \"line\": 176,\n      \"function\": \"dispatch\",\n      \"class\": \"Illuminate\\\\Routing\\\\Router\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Pipeline.php\",\n      \"line\": 30,\n      \"function\": \"Illuminate\\\\Foundation\\\\Http\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/fideloper/proxy/src/TrustProxies.php\",\n      \"line\": 57,\n      \"function\": \"Illuminate\\\\Routing\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php\",\n      \"line\": 151,\n      \"function\": \"handle\",\n      \"class\": \"Fideloper\\\\Proxy\\\\TrustProxies\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Pipeline.php\",\n      \"line\": 53,\n      \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php\",\n      \"line\": 31,\n      \"function\": \"Illuminate\\\\Routing\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php\",\n      \"line\": 151,\n      \"function\": \"handle\",\n      \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TransformsRequest\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Pipeline.php\",\n      \"line\": 53,\n      \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php\",\n      \"line\": 31,\n      \"function\": \"Illuminate\\\\Routing\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php\",\n      \"line\": 151,\n      \"function\": \"handle\",\n      \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TransformsRequest\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Pipeline.php\",\n      \"line\": 53,\n      \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ValidatePostSize.php\",\n      \"line\": 27,\n      \"function\": \"Illuminate\\\\Routing\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php\",\n      \"line\": 151,\n      \"function\": \"handle\",\n      \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\ValidatePostSize\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Pipeline.php\",\n      \"line\": 53,\n      \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/CheckForMaintenanceMode.php\",\n      \"line\": 62,\n      \"function\": \"Illuminate\\\\Routing\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php\",\n      \"line\": 151,\n      \"function\": \"handle\",\n      \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\CheckForMaintenanceMode\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Pipeline.php\",\n      \"line\": 53,\n      \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/fruitcake/laravel-cors/src/HandleCors.php\",\n      \"line\": 57,\n      \"function\": \"Illuminate\\\\Routing\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php\",\n      \"line\": 151,\n      \"function\": \"handle\",\n      \"class\": \"Fruitcake\\\\Cors\\\\HandleCors\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Routing/Pipeline.php\",\n      \"line\": 53,\n      \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php\",\n      \"line\": 104,\n      \"function\": \"Illuminate\\\\Routing\\\\{closure}\",\n      \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php\",\n      \"line\": 151,\n      \"function\": \"then\",\n      \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php\",\n      \"line\": 116,\n      \"function\": \"sendRequestThroughRouter\",\n      \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/public/index.php\",\n      \"line\": 55,\n      \"function\": \"handle\",\n      \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\",\n      \"type\": \"->\"\n    },\n    {\n      \"file\": \"/workspace/tech-317-qa/old-api/server.php\",\n      \"line\": 21,\n      \"function\": \"require_once\"\n    }\n  ]\n}",
+     "reqHeaders": {
+      "Accept": "application/json"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:51 MST"
     },
-    old: {
-      label: 'OLD · local :8001',
-      url: 'http://127.0.0.1:8001/up',
-      status: 404,
-      body: 'HTML 404 page (route does not exist on master)',
-      ok: false,
-      note: 'Expected — `/up` was added for L13 / staging5.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/up",
+     "status": 200,
+     "headers": {
+      "Content-Type": "text/html; charset=utf-8"
+     },
+     "body": "OK",
+     "reqHeaders": {
+      "Accept": "application/json"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:51 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'https://staging5.faberconnect.com/up',
-      status: 200,
-      body: 'OK',
-      ok: true,
-      note: 'Passes the Linear checkbox.'
+    "time": "2026-10-29 12:12:51 MST",
+    "id": "P1a",
+    "name": "GET /up",
+    "parentId": "P1"
+   }
+  ],
+  "status": "pass",
+  "verdict": "Pass \u2014 all 1 calls pass."
+ },
+ {
+  "id": "P2",
+  "section": "pre",
+  "name": "Not on prod DB (jordan+1 marker)",
+  "linear": "P2 \u00b7 local + staging5 not on prod",
+  "simple": "Log in as jordan+1 on both. Exists only on the test DB.",
+  "note": "",
+  "children": [
+   {
+    "method": "POST",
+    "path": "/auth/admin",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 401 / NEW 200 (expected None). Shape: 1 differences (listed below).",
+    "diffs": [
+     "root: str vs dict"
+    ],
+    "note": "jordan+1 only exists on the shared test DB. OLD 401 = local isolated; NEW 200 = staging5 on test DB (not prod).",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/admin",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "285"
+     },
+     "body": "\"You have provided invalid credentials.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"jordan+1@faberconnect.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:13:08 MST"
     },
-    time: '2026-10-29 11:33 MST (rechecked 11:40 MST)',
-    verdict: 'Linear P1 = Pass (NEW 200). OLD 404 is not a fail for this box.'
-  },
-  {
-    id: 'P2',
-    section: 'pre',
-    name: 'Not on prod DB (jordan+1 marker)',
-    status: 'pass',
-    linear: 'P2 · local + staging5 not on prod (test-DB marker)',
-    simple: 'If jordan+1@faberconnect.com exists, that DB is the shared test/staging DB. Confirm local is isolated and staging5 is on test (not prod).',
-    sent: {
-      method: 'POST',
-      url: '/auth/admin',
-      body: '{ email: jordan+1@faberconnect.com, password: •••• }'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/admin",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "285"
+     },
+     "body": "{\n  \"token\": \"<JWT>\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"jordan+1@faberconnect.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:13:08 MST"
     },
-    old: {
-      label: 'OLD · local',
-      url: 'http://127.0.0.1:8001/auth/admin (+ DB faber_local)',
-      status: 401,
-      body: 'You have provided invalid credentials. / users table: 0 rows for jordan+1',
-      ok: true,
-      note: 'Local faber_local — not the test DB (and not prod).'
+    "time": "2026-10-29 12:13:08 MST",
+    "id": "P2a",
+    "name": "POST /auth/admin (jordan+1)",
+    "parentId": "P2"
+   }
+  ],
+  "status": "pass",
+  "verdict": "Pass \u2014 all 1 calls pass."
+ },
+ {
+  "id": "P3",
+  "section": "pre",
+  "name": "Stripe test keys",
+  "linear": "P3 \u00b7 Stripe sk_test_ / pk_test_",
+  "simple": "Confirm Stripe secret is sk_test_. Not re-run (it adds a card).",
+  "note": "",
+  "leafStatic": true,
+  "sent": "OLD: read local .env STRIPE_SECRET / STRIPE_USA_SECRET (prefix only)\nNEW: POST https://staging5.faberconnect.com/v2/admin/company/credit-card/stripe  {\"token\":\"tok_visa\"} company 938",
+  "oldS": "STRIPE_SECRET=sk_test_\u2026 \u00b7 STRIPE_USA_SECRET=sk_test_\u2026 (env file, not an API call)",
+  "newS": "200 \u2014 \"Credit card added successfully\" (tok_visa \u2192 last4 4242). tok_visa only works on test secrets.",
+  "verdict": "Pass \u2014 all 0 calls pass.",
+  "time": "2026-10-29 11:47 MST",
+  "status": "pass"
+ },
+ {
+  "id": "P4",
+  "section": "pre",
+  "name": "VoPay sandbox URL",
+  "linear": "P4 \u00b7 VOPAY_API_URL is sandbox",
+  "simple": "No API call.",
+  "note": "",
+  "leafStatic": true,
+  "sent": "No API call.",
+  "oldS": "Not checked \u2014 no VoPay access.",
+  "newS": "Not checked \u2014 no VoPay access.",
+  "verdict": "",
+  "time": "2026-10-29 11:49 MST",
+  "status": "skip"
+ },
+ {
+  "id": "P5",
+  "section": "pre",
+  "name": "Queue workers running",
+  "linear": "P5 \u00b7 faber-queue-l13 workers running",
+  "simple": "No API call \u2014 Forge UI.",
+  "note": "",
+  "leafStatic": true,
+  "sent": "No API call \u2014 Forge UI.",
+  "oldS": "N/A locally",
+  "newS": "faber-queue-staging5-worker \u2014 Running (1 process)",
+  "verdict": "Pass \u2014 all 0 calls pass.",
+  "time": "2026-10-29 11:51 MST",
+  "status": "pass"
+ },
+ {
+  "id": "P6",
+  "section": "pre",
+  "name": "HubSpot sandbox / blank",
+  "linear": "P6 \u00b7 HUBSPOT_ACCESS_TOKEN sandbox or blank",
+  "simple": "GET https://api.hubapi.com/account-info/v3/details with staging5 token (third-party, not OLD/NEW API).",
+  "note": "",
+  "leafStatic": true,
+  "sent": "GET https://api.hubapi.com/account-info/v3/details with staging5 token (third-party, not OLD/NEW API).",
+  "oldS": "N/A (shared DB use_hubspot_sync=1)",
+  "newS": "200 \u00b7 accountType DEVELOPER_TEST, portalId 343607524",
+  "verdict": "Pass \u2014 all 0 calls pass.",
+  "time": "2026-10-29 11:52 MST",
+  "status": "pass"
+ },
+ {
+  "id": "P7",
+  "section": "pre",
+  "name": "wkhtmltopdf OpenSSL 3",
+  "linear": "P7 \u00b7 wkhtmltopdf jammy / OpenSSL 3",
+  "simple": "No API call \u2014 Forge command.",
+  "note": "",
+  "leafStatic": true,
+  "sent": "No API call \u2014 Forge command.",
+  "oldS": "N/A",
+  "newS": "wkhtmltopdf 0.12.6.1 (with patched qt) at /usr/local/bin",
+  "verdict": "Pass \u2014 all 0 calls pass.",
+  "time": "2026-10-29 12:00 MST",
+  "status": "pass"
+ },
+ {
+  "id": "J1-01",
+  "section": "jwt",
+  "name": "Admin login + GET /user",
+  "linear": "\u00a71 \u00b7 POST /auth/admin \u2192 token; GET /user returns admin",
+  "simple": "Log in as admin, then GET /user with that token.",
+  "note": "",
+  "children": [
+   {
+    "method": "POST",
+    "path": "/auth/admin",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 200 / NEW 200 (expected 200). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/admin",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "299"
+     },
+     "body": "{\n  \"token\": \"<JWT>\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+faber-admin@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:36 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'https://staging5.faberconnect.com/auth/admin',
-      status: 200,
-      body: '{ "token": "<JWT>" }',
-      ok: true,
-      note: 'jordan+1 exists → staging5 is on the shared test/staging DB (not prod).'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/admin",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "299"
+     },
+     "body": "{\n  \"token\": \"<JWT>\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"jordan+1@faberconnect.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:37 MST"
     },
-    time: '2026-10-29 11:45 MST',
-    verdict: 'Pass — local isolated; staging5 on test DB as expected.'
-  },
-  {
-    id: 'P3',
-    section: 'pre',
-    name: 'Stripe test keys',
-    status: 'pass',
-    linear: 'P3 · Stripe sk_test_ / pk_test_',
-    simple: 'Confirm Stripe secret starts with sk_test_ and the FE uses pk_test_.',
-    sent: {
-      method: 'env check + API',
-      url: 'local .env STRIPE_SECRET / STRIPE_USA_SECRET; staging5 POST /v2/admin/company/credit-card/stripe',
-      body: 'prefixes only; tok_visa attach on company 938'
+    "time": "2026-10-29 12:12:37 MST",
+    "id": "J1-01a",
+    "name": "POST /auth/admin",
+    "parentId": "J1-01"
+   },
+   {
+    "method": "GET",
+    "path": "/user",
+    "status": "warn",
+    "verdict": "Pass on Linear check (status/role) \u2014 OLD 200 / NEW 200. \u26a0 SHAPE DIFF vs oracle: 3 differences (listed below) \u2014 flag for dev.",
+    "diffs": [
+     ".company.hubspot_company_id only on NEW",
+     ".company.tax: int vs str",
+     ".has_applied_to_job only on NEW"
+    ],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/user",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "500",
+      "X-RateLimit-Remaining": "499"
+     },
+     "body": "{\n  \"id\": 2,\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Admin\",\n  \"email\": \"waz+faber-admin@mail.grokbot.com\",\n  \"phone_number\": \"+14035550101\",\n  \"company_name\": \"Faber Local Ops\",\n  \"location_radius\": null,\n  \"device_arn\": null,\n  \"profile_picture_link\": null,\n  \"confirmed\": true,\n  \"terms\": true,\n  \"date_signed_up\": \"2026-10-13\",\n  \"created_at\": \"2026-10-13 18:44:07\",\n  \"date_of_birth\": null,\n  \"bio\": null,\n  \"notes\": null,\n  \"notifications\": true,\n  \"facebook_id\": null,\n  \"contractor_ios_app_version\": null,\n  \"contractor_android_app_version\": null,\n  \"contractor_web_app\": null,\n  \"worker_ios_app_version\": null,\n  \"worker_android_app_version\": null,\n  \"worker_web_app\": null,\n  \"last_login_at\": \"2026-10-28 19:48:00\",\n  \"city_id\": 1,\n  \"completed_references_at\": null,\n  \"direct_deposit_filled\": false,\n  \"title\": null,\n  \"company_id\": 2,\n  \"referral_code\": \"ada\",\n  \"set_unavailable_at\": null,\n  \"first_worked_at\": null,\n  \"alpha_tester\": null,\n  \"completed_sin_at\": null,\n  \"gamify_level_id\": 1,\n  \"gamify_points\": 0,\n  \"code_locale_id\": null,\n  \"setting_on_call\": false,\n  \"address_street_number\": null,\n  \"address_street_name\": null,\n  \"address_city\": null,\n  \"address_province\": null,\n  \"address_country\": null,\n  \"address_postal_code\": null,\n  \"address_img_url\": null,\n  \"whistle_blower_alert\": 0,\n  \"w2_verified_at\": null,\n  \"code_worker_location_status_id\": null,\n  \"code_integrated_app_id\": null,\n  \"integrated_app_user_id\": null,\n  \"unsubscribe_from_email\": false,\n  \"converted_attempted_jobs_at\": null,\n  \"score\": null,\n  \"intercom_hash\": null,\n  \"token_version\": 0,\n  \"temporary_password_created_at\": null,\n  \"emergency_contact_name\": null,\n  \"emergency_contact_phone_number\": null,\n  \"job_success_score\": null,\n  \"email_verified_at\": null,\n  \"marked_for_deletion_at\": null,\n  \"user_deleted_at\": null,\n  \"early_score\": null,\n  \"referrals_count\": 0,\n  \"address\": {\n    \"description\": null,\n    \"unit_number\": null,\n    \"location\": {\n      \"lat\": 49.28,\n      \"lng\": -123.12\n    },\n    \"street_number\": null,\n    \"street_name\": null,\n    \"city\": null,\n    \"province\": null,\n    \"country\": null,\n    \"postal_code\": null,\n    \"img_url\": null\n  },\n  \"geolocation\": {\n    \"city\": \"Vancouver\",\n    \"province\": \"BC\",\n    \"country\": \"CA\",\n    \"location\": {\n      \"lat\": 49.28,\n      \"lng\": -123.12\n    }\n  },\n  \"new\": true,\n  \"rating_percentage\": null,\n  \"rating\": null,\n  \"rating_skill_match\": null,\n  \"rating_quality_of_work\": null,\n  \"rating_efficiency\": null,\n  \"rating_effort\": null,\n  \"rating_attendance\": null,\n  \"rating_professionalism\": null,\n  \"use_cases\": [],\n  \"permissions\": [\n    {\n      \"id\": 4,\n      \"description\": \"Edit Request Price\",\n      \"es_description\": null,\n      \"code_permission_type_id\": 1\n    },\n    {\n      \"id\": 6,\n      \"description\": \"Edit Worker Hours\",\n      \"es_description\": null,\n      \"code_permission_type_id\": 1\n    },\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Pagar factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    }\n  ],\n  \"job_success_score_rating\": null,\n  \"tax_terms_accepted\": null,\n  \"instant_payable\": false,\n  \"instant_pay_fee\": {\n    \"description\": \"5%\"\n  },\n  \"user_role\": {\n    \"id\": 3,\n    \"description\": \"Admin\",\n    \"es_description\": null\n  },\n  \"worker_status\": {\n    \"id\": 1,\n    \"description\": \"Unverified\",\n    \"es_description\": null\n  },\n  \"bank_account\": null,\n  \"gamify_level\": {\n    \"id\": 1,\n    \"name\": \"Faber Starter\",\n    \"threshold\": -2147483648,\n    \"description\": \"Welcome to Faber Starter! As you begin working on the Faber platform, you\\u2019ll gain access to more jobs, better pay & earlier access to our best opportunities.\",\n    \"created_at\": \"2026-10-13 18:43:40\",\n    \"updated_at\": \"2026-10-13 18:43:40\",\n    \"upper_threshold\": 3299,\n    \"es_description\": null,\n    \"es_name\": null\n  },\n  \"company_invites\": [],\n  \"organizations\": [],\n  \"organization_affiliations\": [],\n  \"referred_by\": null,\n  \"locale\": null,\n  \"blacklists\": [],\n  \"company\": {\n    \"id\": 2,\n    \"name\": \"Faber Local Ops\",\n    \"admin_user_id\": 2,\n    \"img_url\": null,\n    \"img_public_id\": null,\n    \"code_break_time_id\": null,\n    \"total_break_time_id\": null,\n    \"created_at\": \"2026-10-13 18:44:07\",\n    \"deleted_at\": null,\n    \"customer_stripe_id\": null,\n    \"setting_auto_accept_worker\": null,\n    \"data\": null,\n    \"account_manager_id\": null,\n    \"waves_customer_id\": null,\n    \"w2\": false,\n    \"code_integrated_app_id\": null,\n    \"integrated_app_company_id\": null,\n    \"credit_card_required\": true,\n    \"factored\": false,\n    \"suspended_at\": null,\n    \"code_purchase_order_frequency_id\": null,\n    \"setting_replacement_request_auto_accept\": null,\n    \"setting_cost_codes\": false,\n    \"satisfies_credit_card_requirement\": false,\n    \"tax\": 0,\n    \"credit_cards\": [],\n    \"assigned_permissions\": [],\n    \"users\": [\n      {\n        \"id\": 2,\n        \"company_id\": 2,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 4,\n            \"description\": \"Edit Request Price\",\n            \"es_description\": null,\n            \"code_permission_type_id\": 1\n          },\n          {\n            \"id\": 6,\n            \"description\": \"Edit Worker Hours\",\n            \"es_description\": null,\n            \"code_permission_type_id\": 1\n          },\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Pagar factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 4,\n            \"description\": \"Edit Request Price\",\n            \"es_description\": null,\n            \"code_permission_type_id\": 1\n          },\n          {\n            \"id\": 6,\n            \"description\": \"Edit Worker Hours\",\n            \"es_description\": null,\n            \"code_permission_type_id\": 1\n          },\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Pagar factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      }\n    ]\n  },\n  \"permissions_v1\": [\n    {\n      \"id\": 4,\n      \"description\": \"Edit Request Price\",\n      \"es_description\": null,\n      \"code_permission_type_id\": 1\n    },\n    {\n      \"id\": 6,\n      \"description\": \"Edit Worker Hours\",\n      \"es_description\": null,\n      \"code_permission_type_id\": 1\n    },\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Pagar factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    }\n  ],\n  \"permissions_v2\": []\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:37 MST"
     },
-    old: {
-      label: 'OLD · local',
-      url: 'local .env',
-      status: 200,
-      body: 'STRIPE_SECRET=sk_test_… · STRIPE_USA_SECRET=sk_test_…',
-      ok: true,
-      note: 'No STRIPE_KEY/pk_* in local .env (only STRIPE_SECRET + STRIPE_USA_SECRET).'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/user",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "500",
+      "X-RateLimit-Remaining": "499"
+     },
+     "body": "{\n  \"id\": 163,\n  \"first_name\": \"Jordo Test\",\n  \"last_name\": \"Test 1234\",\n  \"email\": \"jordan+1@faberconnect.com\",\n  \"phone_number\": \"+16045620112\",\n  \"company_name\": \"Yaletown Dev$\",\n  \"location_radius\": 50000,\n  \"device_arn\": null,\n  \"profile_picture_link\": \"https://res.cloudinary.com/difdlt7sp/image/upload/v1496339189/faber_profile_pictures/fvyfcqygm9ttzlambsji.jpg\",\n  \"confirmed\": true,\n  \"terms\": true,\n  \"date_signed_up\": \"2017-06-01\",\n  \"created_at\": \"2017-06-01 10:41:33\",\n  \"date_of_birth\": \"1994-01-09\",\n  \"bio\": \"I am jordo\",\n  \"notes\": null,\n  \"notifications\": true,\n  \"facebook_id\": null,\n  \"contractor_ios_app_version\": \"2.2.2\",\n  \"contractor_android_app_version\": \"7.0.6\",\n  \"contractor_web_app\": true,\n  \"worker_ios_app_version\": null,\n  \"worker_android_app_version\": \"5.2.0\",\n  \"worker_web_app\": true,\n  \"last_login_at\": \"2026-10-28 19:43:35\",\n  \"city_id\": 1,\n  \"completed_references_at\": null,\n  \"direct_deposit_filled\": false,\n  \"title\": null,\n  \"company_id\": 1,\n  \"referral_code\": \"jordo4\",\n  \"set_unavailable_at\": null,\n  \"first_worked_at\": null,\n  \"alpha_tester\": null,\n  \"completed_sin_at\": \"2019-05-13 11:50:11\",\n  \"gamify_level_id\": 1,\n  \"gamify_points\": -150,\n  \"code_locale_id\": null,\n  \"setting_on_call\": false,\n  \"address_street_number\": \"6163\",\n  \"address_street_name\": \"University Blvd\",\n  \"address_city\": \"Vancouver\",\n  \"address_province\": \"BC\",\n  \"address_country\": \"CA\",\n  \"address_postal_code\": \"V6T 2B9\",\n  \"address_img_url\": \"https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyD3nHG4Q_SjVJtWcjxWo2Y_vvF_XQX0pbM&center=6163 University Blvd, Vancouver, BC V6T, Canada&zoom=14&scale=2&size=415x260&maptype=roadmap&format=png&visual_refresh=true&markers=size:mid%7Ccolor:red%7C6163 University Blvd, Vancouver, BC V6T, Canada&style=hue:0xff0000%7Csaturation:-100%7Clightness:-30&style=element:labels.text.fill%7Ccolor:0xffffff&style=element:labels.text.stroke%7Ccolor:0x353535&style=feature:landscape%7Celement:geometry%7Ccolor:0x656565&style=feature:poi%7Celement:geometry.fill%7Ccolor:0x505050&style=feature:poi%7Celement:geometry.stroke%7Ccolor:0x808080&style=feature:road%7Celement:geometry%7Ccolor:0x454545&style=feature:transit%7Cvisibility:off&style=feature:transit%7Celement:labels%7Chue:0x000000%7Csaturation:100%7Cinvert_lightness:true%7Clightness:-40%7Cgamma:1.5&style=feature:transit.station.airport%7Cvisibility:off&style=feature:transit.station.airport%7Celement:labels.icon%7Cvisibility:off&style=feature:transit.station.airport%7Celement:labels.text.stroke%7Ccolor:0xffffff%7Cweight:1\",\n  \"whistle_blower_alert\": 0,\n  \"w2_verified_at\": null,\n  \"code_worker_location_status_id\": 2,\n  \"code_integrated_app_id\": null,\n  \"integrated_app_user_id\": null,\n  \"unsubscribe_from_email\": false,\n  \"converted_attempted_jobs_at\": null,\n  \"score\": null,\n  \"intercom_hash\": \"3bdc1b4e14345bcce02b8f251921c2e09df52272b62a86403f5ef45939471e2a\",\n  \"token_version\": 0,\n  \"temporary_password_created_at\": null,\n  \"emergency_contact_name\": null,\n  \"emergency_contact_phone_number\": null,\n  \"job_success_score\": null,\n  \"email_verified_at\": null,\n  \"marked_for_deletion_at\": null,\n  \"user_deleted_at\": null,\n  \"early_score\": null,\n  \"has_applied_to_job\": false,\n  \"referrals_count\": 0,\n  \"address\": {\n    \"description\": \"6163 University Blvd, Vancouver, BC V6T, Canada\",\n    \"unit_number\": null,\n    \"location\": {\n      \"lat\": 49.265971,\n      \"lng\": -123.24994\n    },\n    \"street_number\": \"6163\",\n    \"street_name\": \"University Blvd\",\n    \"city\": \"Vancouver\",\n    \"province\": \"BC\",\n    \"country\": \"CA\",\n    \"postal_code\": \"V6T 2B9\",\n    \"img_url\": \"https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyD3nHG4Q_SjVJtWcjxWo2Y_vvF_XQX0pbM&center=6163 University Blvd, Vancouver, BC V6T, Canada&zoom=14&scale=2&size=415x260&maptype=roadmap&format=png&visual_refresh=true&markers=size:mid%7Ccolor:red%7C6163 University Blvd, Vancouver, BC V6T, Canada&style=hue:0xff0000%7Csaturation:-100%7Clightness:-30&style=element:labels.text.fill%7Ccolor:0xffffff&style=element:labels.text.stroke%7Ccolor:0x353535&style=feature:landscape%7Celement:geometry%7Ccolor:0x656565&style=feature:poi%7Celement:geometry.fill%7Ccolor:0x505050&style=feature:poi%7Celement:geometry.stroke%7Ccolor:0x808080&style=feature:road%7Celement:geometry%7Ccolor:0x454545&style=feature:transit%7Cvisibility:off&style=feature:transit%7Celement:labels%7Chue:0x000000%7Csaturation:100%7Cinvert_lightness:true%7Clightness:-40%7Cgamma:1.5&style=feature:transit.station.airport%7Cvisibility:off&style=feature:transit.station.airport%7Celement:labels.icon%7Cvisibility:off&style=feature:transit.station.airport%7Celement:labels.text.stroke%7Ccolor:0xffffff%7Cweight:1\"\n  },\n  \"geolocation\": null,\n  \"new\": false,\n  \"rating_percentage\": null,\n  \"rating\": null,\n  \"rating_skill_match\": null,\n  \"rating_quality_of_work\": null,\n  \"rating_efficiency\": null,\n  \"rating_effort\": null,\n  \"rating_attendance\": null,\n  \"rating_professionalism\": null,\n  \"use_cases\": [],\n  \"permissions\": [\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Factura de pago\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 4,\n      \"description\": \"Edit Request Price\",\n      \"es_description\": \"Editar el precio de la solicitud\",\n      \"code_permission_type_id\": 1\n    },\n    {\n      \"id\": 6,\n      \"description\": \"Edit Worker Hours\",\n      \"es_description\": \"Editar horas de trabajo\",\n      \"code_permission_type_id\": 1\n    }\n  ],\n  \"job_success_score_rating\": null,\n  \"tax_terms_accepted\": true,\n  \"instant_payable\": false,\n  \"instant_pay_fee\": {\n    \"description\": \"5%\"\n  },\n  \"user_role\": {\n    \"id\": 3,\n    \"description\": \"Admin\",\n    \"es_description\": \"Administrador\"\n  },\n  \"worker_status\": {\n    \"id\": 2,\n    \"description\": \"Available\",\n    \"es_description\": \"Disponible\"\n  },\n  \"bank_account\": null,\n  \"gamify_level\": {\n    \"id\": 1,\n    \"name\": \"Faber Starter\",\n    \"threshold\": -2147483648,\n    \"description\": \"Welcome to Faber Starter! As you begin working on the Faber platform, you\\u2019ll gain access to more jobs, better pay & earlier access to our best opportunities.\",\n    \"created_at\": \"2019-07-23 23:01:49\",\n    \"updated_at\": \"2021-10-12 16:47:34\",\n    \"upper_threshold\": 3299,\n    \"es_description\": \"Bienvenido a Faber Starter! A medida que empieces a trabajar en la plataforma Faber, tendr\\u00e1s acceso a m\\u00e1s empleos, mejores salarios y acceso m\\u00e1s temprano a nuestras mejores oportunidades.\",\n    \"es_name\": \"Arrancador Faber\"\n  },\n  \"company_invites\": [],\n  \"organizations\": [],\n  \"organization_affiliations\": [],\n  \"referred_by\": {\n    \"id\": 133,\n    \"other_source\": null,\n    \"created_at\": \"2018-02-02 11:41:56\",\n    \"paid_status\": false,\n    \"referral_fulfilled_at\": null\n  },\n  \"locale\": null,\n  \"blacklists\": [],\n  \"company\": {\n    \"id\": 1,\n    \"name\": \"Yaletown Dev$\",\n    \"admin_user_id\": 35,\n    \"img_url\": \"https://res.cloudinary.com/difdlt7sp/image/upload/c_fill,h_600,w_600/v1532648707/om7weijwfbev9ev6s3up.jpg\",\n    \"img_public_id\": \"om7weijwfbev9ev6s3up\",\n    \"code_break_time_id\": 0,\n    \"total_break_time_id\": 0,\n    \"created_at\": \"2018-04-03 23:27:55\",\n    \"deleted_at\": null,\n    \"customer_stripe_id\": \"cus_EpJnPGxdgI2LNf\",\n    \"setting_auto_accept_worker\": true,\n    \"data\": {\n      \"additional_invoice_emails\": [],\n      \"accountant_name\": \"Mr Banana10\",\n      \"accountant_email\": \"bananakittten10@accountant.com\"\n    },\n    \"account_manager_id\": 163,\n    \"waves_customer_id\": \"QnVzaW5lc3M6MzJmYzBhZjMtYWU1Yy00ZTFhLTk5MDgtZWQyNmNhZTIzOGQ4O0N1c3RvbWVyOjQwNTQyMDA1\",\n    \"w2\": false,\n    \"code_integrated_app_id\": null,\n    \"integrated_app_company_id\": null,\n    \"credit_card_required\": true,\n    \"factored\": false,\n    \"suspended_at\": null,\n    \"code_purchase_order_frequency_id\": null,\n    \"setting_replacement_request_auto_accept\": null,\n    \"setting_cost_codes\": false,\n    \"hubspot_company_id\": null,\n    \"satisfies_credit_card_requirement\": true,\n    \"tax\": \"0\",\n    \"credit_cards\": [\n      {\n        \"id\": 7,\n        \"company_id\": 1,\n        \"stripe_id\": \"cus_EpJnPGxdgI2LNf\",\n        \"card_brand\": \"Visa\",\n        \"card_last_four\": \"4242\",\n        \"card_exp_month\": \"4\",\n        \"card_exp_year\": \"2029\",\n        \"postal_code\": \"42424\",\n        \"country_code\": \"CA\"\n      }\n    ],\n    \"assigned_permissions\": [],\n    \"users\": [\n      {\n        \"id\": 50,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 601,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1197,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1035,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1994,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1024,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1025,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 671,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 880,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1077,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 219,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1409,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1410,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 772,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1417,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1626,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 163,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 4,\n            \"description\": \"Edit Request Price\",\n            \"es_description\": \"Editar el precio de la solicitud\",\n            \"code_permission_type_id\": 1\n          },\n          {\n            \"id\": 6,\n            \"description\": \"Edit Worker Hours\",\n            \"es_description\": \"Editar horas de trabajo\",\n            \"code_permission_type_id\": 1\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 4,\n            \"description\": \"Edit Request Price\",\n            \"es_description\": \"Editar el precio de la solicitud\",\n            \"code_permission_type_id\": 1\n          },\n          {\n            \"id\": 6,\n            \"description\": \"Edit Worker Hours\",\n            \"es_description\": \"Editar horas de trabajo\",\n            \"code_permission_type_id\": 1\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1065,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 526,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [\n          {\n            \"id\": 7,\n            \"description\": \"I prefer flexible, diverse work over full-time employment\",\n            \"es_description\": \"Prefiero el trabajo flexible y diverso antes que el empleo a tiempo completo\",\n            \"created_at\": \"2021-02-26 15:14:39\",\n            \"updated_at\": \"2021-02-26 15:14:39\",\n            \"pivot\": {\n              \"user_id\": 526,\n              \"code_use_case_id\": 7,\n              \"created_at\": \"2021-04-20 11:25:57\",\n              \"updated_at\": \"2021-04-20 11:25:57\"\n            }\n          }\n        ],\n        \"permissions\": [\n          {\n            \"id\": 4,\n            \"description\": \"Edit Request Price\",\n            \"es_description\": \"Editar el precio de la solicitud\",\n            \"code_permission_type_id\": 1\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 4,\n            \"description\": \"Edit Request Price\",\n            \"es_description\": \"Editar el precio de la solicitud\",\n            \"code_permission_type_id\": 1\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 1100,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      },\n      {\n        \"id\": 35,\n        \"company_id\": 1,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      }\n    ]\n  },\n  \"permissions_v1\": [\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Factura de pago\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 4,\n      \"description\": \"Edit Request Price\",\n      \"es_description\": \"Editar el precio de la solicitud\",\n      \"code_permission_type_id\": 1\n    },\n    {\n      \"id\": 6,\n      \"description\": \"Edit Worker Hours\",\n      \"es_description\": \"Editar horas de trabajo\",\n      \"code_permission_type_id\": 1\n    }\n  ],\n  \"permissions_v2\": []\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:38 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'https://staging5.faberconnect.com/v2/admin/company/credit-card/stripe',
-      status: 200,
-      body: 'Credit card added successfully (tok_visa → last4 4242, cus_…)',
-      ok: true,
-      note: 'tok_visa only works with test secrets — staging5 STRIPE_SECRET is test mode.'
+    "time": "2026-10-29 12:12:38 MST",
+    "id": "J1-01b",
+    "name": "GET /user (admin token)",
+    "parentId": "J1-01"
+   }
+  ],
+  "status": "warn",
+  "verdict": ""
+ },
+ {
+  "id": "J1-02",
+  "section": "jwt",
+  "name": "Contractor + worker login",
+  "linear": "\u00a71 \u00b7 /auth/contractor + /auth/worker \u2192 token; GET /user right role",
+  "simple": "Log in each role on its app route, then GET /user.",
+  "note": "",
+  "children": [
+   {
+    "method": "POST",
+    "path": "/auth/contractor",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 200 / NEW 200 (expected 200). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/contractor",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "298"
+     },
+     "body": "{\n  \"token\": \"<JWT>\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317oc1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:38 MST"
     },
-    time: '2026-10-29 11:47 MST',
-    verdict: 'Pass — sk_test_ local + staging5 tok_visa. No local pk_*; FE publishable not in this .env.'
-  },
-  {
-    id: 'P4',
-    section: 'pre',
-    name: 'VoPay sandbox URL',
-    status: 'skip',
-    linear: 'P4 · VOPAY_API_URL is sandbox',
-    simple: 'Confirm VoPay URL is sandbox. If not confirmed, skip every Pay workers item later.',
-    sent: null,
-    old: {
-      label: 'OLD · local',
-      url: '—',
-      status: null,
-      body: 'Not checked — Pay/VoPay access not granted.',
-      ok: null,
-      note: 'Skip Pay workers.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/contractor",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "298"
+     },
+     "body": "{\n  \"token\": \"<JWT>\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317nc1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:39 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: '—',
-      status: null,
-      body: 'Not checked — no VoPay access yet.',
-      ok: null,
-      note: 'Skip every Pay workers item; draft/export/mark-paid/cancel still OK.'
+    "time": "2026-10-29 12:12:39 MST",
+    "id": "J1-02a",
+    "name": "POST /auth/contractor",
+    "parentId": "J1-02"
+   },
+   {
+    "method": "GET",
+    "path": "/user",
+    "status": "warn",
+    "verdict": "Pass on Linear check (status/role) \u2014 OLD 200 / NEW 200. \u26a0 SHAPE DIFF vs oracle: 2 differences (listed below) \u2014 flag for dev.",
+    "diffs": [
+     ".company.hubspot_company_id only on NEW",
+     ".has_applied_to_job only on NEW"
+    ],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/user",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "500",
+      "X-RateLimit-Remaining": "499"
+     },
+     "body": "{\n  \"id\": 2368,\n  \"first_name\": \"T317\",\n  \"last_name\": \"Cx\",\n  \"email\": \"waz+t317oc1300587@mail.grokbot.com\",\n  \"phone_number\": \"+14035550587\",\n  \"company_name\": \"T317 Cx 300587\",\n  \"location_radius\": null,\n  \"device_arn\": null,\n  \"profile_picture_link\": null,\n  \"confirmed\": true,\n  \"terms\": true,\n  \"date_signed_up\": \"2026-10-29\",\n  \"created_at\": \"2026-10-29 12:03:07\",\n  \"date_of_birth\": null,\n  \"bio\": null,\n  \"notes\": null,\n  \"notifications\": true,\n  \"facebook_id\": null,\n  \"contractor_ios_app_version\": null,\n  \"contractor_android_app_version\": null,\n  \"contractor_web_app\": null,\n  \"worker_ios_app_version\": null,\n  \"worker_android_app_version\": null,\n  \"worker_web_app\": null,\n  \"last_login_at\": null,\n  \"city_id\": 1,\n  \"completed_references_at\": null,\n  \"direct_deposit_filled\": false,\n  \"title\": null,\n  \"company_id\": 24,\n  \"referral_code\": \"t317\",\n  \"set_unavailable_at\": null,\n  \"first_worked_at\": null,\n  \"alpha_tester\": null,\n  \"completed_sin_at\": null,\n  \"gamify_level_id\": 1,\n  \"gamify_points\": 0,\n  \"code_locale_id\": null,\n  \"setting_on_call\": false,\n  \"address_street_number\": null,\n  \"address_street_name\": null,\n  \"address_city\": null,\n  \"address_province\": null,\n  \"address_country\": null,\n  \"address_postal_code\": null,\n  \"address_img_url\": null,\n  \"whistle_blower_alert\": 0,\n  \"w2_verified_at\": null,\n  \"code_worker_location_status_id\": null,\n  \"code_integrated_app_id\": null,\n  \"integrated_app_user_id\": null,\n  \"unsubscribe_from_email\": false,\n  \"converted_attempted_jobs_at\": null,\n  \"score\": null,\n  \"intercom_hash\": null,\n  \"token_version\": 0,\n  \"temporary_password_created_at\": null,\n  \"emergency_contact_name\": null,\n  \"emergency_contact_phone_number\": null,\n  \"job_success_score\": null,\n  \"email_verified_at\": null,\n  \"marked_for_deletion_at\": null,\n  \"user_deleted_at\": null,\n  \"early_score\": null,\n  \"referrals_count\": 0,\n  \"address\": {\n    \"description\": null,\n    \"unit_number\": null,\n    \"location\": {\n      \"lat\": 49.28,\n      \"lng\": -123.12\n    },\n    \"street_number\": null,\n    \"street_name\": null,\n    \"city\": null,\n    \"province\": null,\n    \"country\": null,\n    \"postal_code\": null,\n    \"img_url\": null\n  },\n  \"geolocation\": {\n    \"city\": \"Vancouver\",\n    \"province\": \"BC\",\n    \"country\": \"CA\",\n    \"location\": {\n      \"lat\": 49.28,\n      \"lng\": -123.12\n    }\n  },\n  \"new\": true,\n  \"rating_percentage\": null,\n  \"rating\": null,\n  \"rating_skill_match\": null,\n  \"rating_quality_of_work\": null,\n  \"rating_efficiency\": null,\n  \"rating_effort\": null,\n  \"rating_attendance\": null,\n  \"rating_professionalism\": null,\n  \"use_cases\": [],\n  \"permissions\": [\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Pagar factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    }\n  ],\n  \"job_success_score_rating\": null,\n  \"tax_terms_accepted\": null,\n  \"instant_payable\": false,\n  \"instant_pay_fee\": {\n    \"description\": \"5%\"\n  },\n  \"user_role\": {\n    \"id\": 1,\n    \"description\": \"Contractor\",\n    \"es_description\": null\n  },\n  \"worker_status\": {\n    \"id\": 1,\n    \"description\": \"Unverified\",\n    \"es_description\": null\n  },\n  \"bank_account\": null,\n  \"gamify_level\": {\n    \"id\": 1,\n    \"name\": \"Faber Starter\",\n    \"threshold\": -2147483648,\n    \"description\": \"Welcome to Faber Starter! As you begin working on the Faber platform, you\\u2019ll gain access to more jobs, better pay & earlier access to our best opportunities.\",\n    \"created_at\": \"2026-10-13 18:43:40\",\n    \"updated_at\": \"2026-10-13 18:43:40\",\n    \"upper_threshold\": 3299,\n    \"es_description\": null,\n    \"es_name\": null\n  },\n  \"company_invites\": [],\n  \"organizations\": [],\n  \"organization_affiliations\": [],\n  \"referred_by\": null,\n  \"locale\": null,\n  \"blacklists\": [],\n  \"company\": {\n    \"id\": 24,\n    \"name\": \"T317 Cx 300587\",\n    \"admin_user_id\": 2368,\n    \"img_url\": null,\n    \"img_public_id\": null,\n    \"code_break_time_id\": null,\n    \"total_break_time_id\": null,\n    \"created_at\": \"2026-10-29 12:03:07\",\n    \"deleted_at\": null,\n    \"customer_stripe_id\": null,\n    \"setting_auto_accept_worker\": null,\n    \"data\": null,\n    \"account_manager_id\": null,\n    \"waves_customer_id\": null,\n    \"w2\": false,\n    \"code_integrated_app_id\": null,\n    \"integrated_app_company_id\": null,\n    \"credit_card_required\": true,\n    \"factored\": false,\n    \"suspended_at\": null,\n    \"code_purchase_order_frequency_id\": null,\n    \"setting_replacement_request_auto_accept\": null,\n    \"setting_cost_codes\": false,\n    \"satisfies_credit_card_requirement\": false,\n    \"tax\": 0,\n    \"credit_cards\": [],\n    \"assigned_permissions\": [],\n    \"users\": [\n      {\n        \"id\": 2368,\n        \"company_id\": 24,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Pagar factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Pagar factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      }\n    ]\n  },\n  \"permissions_v1\": [\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Pagar factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"Agregar tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    }\n  ],\n  \"permissions_v2\": []\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:39 MST"
     },
-    time: '2026-10-29 11:49 MST',
-    verdict: 'Skipped — no VoPay access yet (Waz).'
-  },
-  {
-    id: 'P5',
-    section: 'pre',
-    name: 'Queue workers running',
-    status: 'pass',
-    linear: 'P5 · faber-queue-l13 workers running',
-    simple: 'Confirm staging5 queue workers (faber-queue-l13 and named -l13 queues) are up after last deploy.',
-    sent: { method: 'Forge UI', url: 'Processes → Background processes', body: 'Screenshot from Waz' },
-    old: {
-      label: 'OLD · local',
-      url: '—',
-      status: null,
-      body: 'N/A — local uses sync/queue not Forge daemons.',
-      ok: true,
-      note: 'Precondition is staging5-only.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/user",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "500",
+      "X-RateLimit-Remaining": "499"
+     },
+     "body": "{\n  \"id\": 2377,\n  \"first_name\": \"T317\",\n  \"last_name\": \"Cx\",\n  \"email\": \"waz+t317nc1300587@mail.grokbot.com\",\n  \"phone_number\": \"+14035550687\",\n  \"company_name\": \"T317 Cx 300587\",\n  \"location_radius\": null,\n  \"device_arn\": null,\n  \"profile_picture_link\": null,\n  \"confirmed\": true,\n  \"terms\": true,\n  \"date_signed_up\": \"2026-10-29\",\n  \"created_at\": \"2026-10-29 12:03:08\",\n  \"date_of_birth\": null,\n  \"bio\": null,\n  \"notes\": null,\n  \"notifications\": true,\n  \"facebook_id\": null,\n  \"contractor_ios_app_version\": null,\n  \"contractor_android_app_version\": null,\n  \"contractor_web_app\": null,\n  \"worker_ios_app_version\": null,\n  \"worker_android_app_version\": null,\n  \"worker_web_app\": null,\n  \"last_login_at\": null,\n  \"city_id\": null,\n  \"completed_references_at\": null,\n  \"direct_deposit_filled\": false,\n  \"title\": null,\n  \"company_id\": 939,\n  \"referral_code\": \"t317\",\n  \"set_unavailable_at\": null,\n  \"first_worked_at\": null,\n  \"alpha_tester\": null,\n  \"completed_sin_at\": null,\n  \"gamify_level_id\": 1,\n  \"gamify_points\": 0,\n  \"code_locale_id\": null,\n  \"setting_on_call\": false,\n  \"address_street_number\": null,\n  \"address_street_name\": null,\n  \"address_city\": null,\n  \"address_province\": null,\n  \"address_country\": null,\n  \"address_postal_code\": null,\n  \"address_img_url\": null,\n  \"whistle_blower_alert\": 0,\n  \"w2_verified_at\": null,\n  \"code_worker_location_status_id\": null,\n  \"code_integrated_app_id\": null,\n  \"integrated_app_user_id\": null,\n  \"unsubscribe_from_email\": false,\n  \"converted_attempted_jobs_at\": null,\n  \"score\": null,\n  \"intercom_hash\": \"0e7a1cf210d369464d6ed842583beb47039248b54bfb919048a2e942c015b433\",\n  \"token_version\": 0,\n  \"temporary_password_created_at\": null,\n  \"emergency_contact_name\": null,\n  \"emergency_contact_phone_number\": null,\n  \"job_success_score\": null,\n  \"email_verified_at\": null,\n  \"marked_for_deletion_at\": null,\n  \"user_deleted_at\": null,\n  \"early_score\": null,\n  \"has_applied_to_job\": false,\n  \"referrals_count\": 0,\n  \"address\": {\n    \"description\": null,\n    \"unit_number\": null,\n    \"location\": {\n      \"lat\": 37.3388,\n      \"lng\": -121.8916\n    },\n    \"street_number\": null,\n    \"street_name\": null,\n    \"city\": null,\n    \"province\": null,\n    \"country\": null,\n    \"postal_code\": null,\n    \"img_url\": null\n  },\n  \"geolocation\": {\n    \"city\": \"San Jose\",\n    \"province\": \"CA\",\n    \"country\": \"US\",\n    \"location\": {\n      \"lat\": 37.3388,\n      \"lng\": -121.8916\n    }\n  },\n  \"new\": true,\n  \"rating_percentage\": null,\n  \"rating\": null,\n  \"rating_skill_match\": null,\n  \"rating_quality_of_work\": null,\n  \"rating_efficiency\": null,\n  \"rating_effort\": null,\n  \"rating_attendance\": null,\n  \"rating_professionalism\": null,\n  \"use_cases\": [],\n  \"permissions\": [\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Factura de pago\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    }\n  ],\n  \"job_success_score_rating\": null,\n  \"tax_terms_accepted\": null,\n  \"instant_payable\": false,\n  \"instant_pay_fee\": {\n    \"description\": \"5%\"\n  },\n  \"user_role\": {\n    \"id\": 1,\n    \"description\": \"Contractor\",\n    \"es_description\": \"Contratista\"\n  },\n  \"worker_status\": {\n    \"id\": 0,\n    \"description\": \"Onboarding Incomplete\",\n    \"es_description\": \"Incorporaci\\u00f3n incompleta\"\n  },\n  \"bank_account\": null,\n  \"gamify_level\": {\n    \"id\": 1,\n    \"name\": \"Faber Starter\",\n    \"threshold\": -2147483648,\n    \"description\": \"Welcome to Faber Starter! As you begin working on the Faber platform, you\\u2019ll gain access to more jobs, better pay & earlier access to our best opportunities.\",\n    \"created_at\": \"2019-07-23 23:01:49\",\n    \"updated_at\": \"2021-10-12 16:47:34\",\n    \"upper_threshold\": 3299,\n    \"es_description\": \"Bienvenido a Faber Starter! A medida que empieces a trabajar en la plataforma Faber, tendr\\u00e1s acceso a m\\u00e1s empleos, mejores salarios y acceso m\\u00e1s temprano a nuestras mejores oportunidades.\",\n    \"es_name\": \"Arrancador Faber\"\n  },\n  \"company_invites\": [],\n  \"organizations\": [],\n  \"organization_affiliations\": [],\n  \"referred_by\": null,\n  \"locale\": null,\n  \"blacklists\": [],\n  \"company\": {\n    \"id\": 939,\n    \"name\": \"T317 Cx 300587\",\n    \"admin_user_id\": 2377,\n    \"img_url\": null,\n    \"img_public_id\": null,\n    \"code_break_time_id\": null,\n    \"total_break_time_id\": null,\n    \"created_at\": \"2026-10-29 12:03:08\",\n    \"deleted_at\": null,\n    \"customer_stripe_id\": null,\n    \"setting_auto_accept_worker\": null,\n    \"data\": null,\n    \"account_manager_id\": null,\n    \"waves_customer_id\": null,\n    \"w2\": false,\n    \"code_integrated_app_id\": null,\n    \"integrated_app_company_id\": null,\n    \"credit_card_required\": true,\n    \"factored\": false,\n    \"suspended_at\": null,\n    \"code_purchase_order_frequency_id\": null,\n    \"setting_replacement_request_auto_accept\": null,\n    \"setting_cost_codes\": false,\n    \"hubspot_company_id\": null,\n    \"satisfies_credit_card_requirement\": false,\n    \"tax\": 0,\n    \"credit_cards\": [],\n    \"assigned_permissions\": [],\n    \"users\": [\n      {\n        \"id\": 2377,\n        \"company_id\": 939,\n        \"address\": {\n          \"description\": null,\n          \"unit_number\": null,\n          \"street_number\": null,\n          \"street_name\": null,\n          \"city\": null,\n          \"province\": null,\n          \"country\": null,\n          \"postal_code\": null,\n          \"img_url\": null\n        },\n        \"geolocation\": null,\n        \"new\": false,\n        \"rating_percentage\": null,\n        \"rating\": null,\n        \"rating_skill_match\": null,\n        \"rating_quality_of_work\": null,\n        \"rating_efficiency\": null,\n        \"rating_effort\": null,\n        \"rating_attendance\": null,\n        \"rating_professionalism\": null,\n        \"use_cases\": [],\n        \"permissions\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"job_success_score_rating\": null,\n        \"permissions_v1\": [\n          {\n            \"id\": 1,\n            \"description\": \"View Invoice\",\n            \"es_description\": \"Ver factura\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 2,\n            \"description\": \"Pay Invoice\",\n            \"es_description\": \"Factura de pago\",\n            \"code_permission_type_id\": 2\n          },\n          {\n            \"id\": 3,\n            \"description\": \"Add Credit Card\",\n            \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n            \"code_permission_type_id\": 2\n          }\n        ],\n        \"permissions_v2\": []\n      }\n    ]\n  },\n  \"permissions_v1\": [\n    {\n      \"id\": 1,\n      \"description\": \"View Invoice\",\n      \"es_description\": \"Ver factura\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 2,\n      \"description\": \"Pay Invoice\",\n      \"es_description\": \"Factura de pago\",\n      \"code_permission_type_id\": 2\n    },\n    {\n      \"id\": 3,\n      \"description\": \"Add Credit Card\",\n      \"es_description\": \"A\\u00f1adir tarjeta de cr\\u00e9dito\",\n      \"code_permission_type_id\": 2\n    }\n  ],\n  \"permissions_v2\": []\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:40 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'Forge Processes',
-      status: 200,
-      body: 'faber-queue-staging5-worker — Running (1 process)',
-      ok: true,
-      note: 'Matches staging5 queue worker daemon.'
+    "time": "2026-10-29 12:12:40 MST",
+    "id": "J1-02b",
+    "name": "GET /user (contractor token)",
+    "parentId": "J1-02"
+   },
+   {
+    "method": "POST",
+    "path": "/auth/worker",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 200 / NEW 200 (expected 200). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/worker",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "297"
+     },
+     "body": "{\n  \"token\": \"<JWT>\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317ow1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:40 MST"
     },
-    time: '2026-10-29 11:51 MST',
-    verdict: 'Pass — staging5 queue worker running in Forge.'
-  },
-  {
-    id: 'P6',
-    section: 'pre',
-    name: 'HubSpot sandbox / blank',
-    status: 'pass',
-    linear: 'P6 · HUBSPOT_ACCESS_TOKEN sandbox or blank',
-    simple: 'Confirm HubSpot token is sandbox or blank before creating companies/projects.',
-    sent: {
-      method: 'GET',
-      url: 'https://api.hubapi.com/account-info/v3/details',
-      body: 'Authorization: Bearer HUBSPOT_ACCESS_TOKEN (prefix only in report)'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/worker",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "297"
+     },
+     "body": "{\n  \"token\": \"<JWT>\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317nw1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:40 MST"
     },
-    old: {
-      label: 'OLD · local',
-      url: 'DB configurations + N/A for staging token',
-      status: null,
-      body: 'Shared DB use_hubspot_sync=1 (same staging DB).',
-      ok: true,
-      note: 'Flag is shared; token check is staging5 Forge env.'
+    "time": "2026-10-29 12:12:40 MST",
+    "id": "J1-02c",
+    "name": "POST /auth/worker",
+    "parentId": "J1-02"
+   },
+   {
+    "method": "GET",
+    "path": "/user",
+    "status": "warn",
+    "verdict": "Pass on Linear check (status/role) \u2014 OLD 200 / NEW 200. \u26a0 SHAPE DIFF vs oracle: 5 differences (listed below) \u2014 flag for dev.",
+    "diffs": [
+     ".has_applied_to_job only on NEW",
+     ".permissions[0].laravel_through_key only on NEW",
+     ".permissions[0].permissionable_id missing on NEW",
+     ".permissions_v2[0].laravel_through_key only on NEW",
+     ".permissions_v2[0].permissionable_id missing on NEW"
+    ],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/user",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "500",
+      "X-RateLimit-Remaining": "499"
+     },
+     "body": "{\n  \"id\": 2369,\n  \"first_name\": \"T317\",\n  \"last_name\": \"Wx\",\n  \"email\": \"waz+t317ow1300587@mail.grokbot.com\",\n  \"phone_number\": \"+14035560587\",\n  \"company_name\": null,\n  \"location_radius\": null,\n  \"device_arn\": null,\n  \"profile_picture_link\": null,\n  \"confirmed\": true,\n  \"terms\": true,\n  \"date_signed_up\": \"2026-10-29\",\n  \"created_at\": \"2026-10-29 12:03:07\",\n  \"date_of_birth\": \"1990-01-01\",\n  \"bio\": null,\n  \"notes\": null,\n  \"notifications\": true,\n  \"facebook_id\": null,\n  \"contractor_ios_app_version\": null,\n  \"contractor_android_app_version\": null,\n  \"contractor_web_app\": null,\n  \"worker_ios_app_version\": null,\n  \"worker_android_app_version\": null,\n  \"worker_web_app\": null,\n  \"last_login_at\": null,\n  \"city_id\": null,\n  \"completed_references_at\": null,\n  \"direct_deposit_filled\": false,\n  \"title\": null,\n  \"company_id\": null,\n  \"referral_code\": \"t3172\",\n  \"set_unavailable_at\": null,\n  \"first_worked_at\": null,\n  \"alpha_tester\": null,\n  \"completed_sin_at\": null,\n  \"gamify_level_id\": 1,\n  \"gamify_points\": 0,\n  \"code_locale_id\": null,\n  \"setting_on_call\": false,\n  \"address_street_number\": null,\n  \"address_street_name\": null,\n  \"address_city\": null,\n  \"address_province\": null,\n  \"address_country\": null,\n  \"address_postal_code\": null,\n  \"address_img_url\": null,\n  \"whistle_blower_alert\": 0,\n  \"w2_verified_at\": null,\n  \"code_worker_location_status_id\": null,\n  \"code_integrated_app_id\": null,\n  \"integrated_app_user_id\": null,\n  \"unsubscribe_from_email\": false,\n  \"converted_attempted_jobs_at\": null,\n  \"score\": null,\n  \"intercom_hash\": null,\n  \"token_version\": 0,\n  \"temporary_password_created_at\": null,\n  \"emergency_contact_name\": null,\n  \"emergency_contact_phone_number\": null,\n  \"job_success_score\": null,\n  \"email_verified_at\": null,\n  \"marked_for_deletion_at\": null,\n  \"user_deleted_at\": null,\n  \"early_score\": null,\n  \"referrals_count\": 0,\n  \"address\": {\n    \"description\": null,\n    \"unit_number\": null,\n    \"location\": {\n      \"lat\": 49.28,\n      \"lng\": -123.12\n    },\n    \"street_number\": null,\n    \"street_name\": null,\n    \"city\": null,\n    \"province\": null,\n    \"country\": null,\n    \"postal_code\": null,\n    \"img_url\": null\n  },\n  \"geolocation\": {\n    \"city\": \"Vancouver\",\n    \"province\": \"BC\",\n    \"country\": \"CA\",\n    \"location\": {\n      \"lat\": 49.28,\n      \"lng\": -123.12\n    }\n  },\n  \"new\": true,\n  \"rating_percentage\": null,\n  \"rating\": null,\n  \"rating_skill_match\": null,\n  \"rating_quality_of_work\": null,\n  \"rating_efficiency\": null,\n  \"rating_effort\": null,\n  \"rating_attendance\": null,\n  \"rating_professionalism\": null,\n  \"use_cases\": [],\n  \"permissions\": [\n    {\n      \"id\": 7,\n      \"description\": \"Marketplace\",\n      \"es_description\": null,\n      \"code_permission_type_id\": 3,\n      \"permissionable_id\": 2369\n    }\n  ],\n  \"job_success_score_rating\": null,\n  \"tax_terms_accepted\": null,\n  \"instant_payable\": false,\n  \"instant_pay_fee\": {\n    \"description\": \"5%\"\n  },\n  \"user_role\": {\n    \"id\": 2,\n    \"description\": \"Worker\",\n    \"es_description\": null\n  },\n  \"worker_status\": {\n    \"id\": 0,\n    \"description\": \"Onboarding Incomplete\",\n    \"es_description\": null\n  },\n  \"bank_account\": null,\n  \"gamify_level\": {\n    \"id\": 1,\n    \"name\": \"Faber Starter\",\n    \"threshold\": -2147483648,\n    \"description\": \"Welcome to Faber Starter! As you begin working on the Faber platform, you\\u2019ll gain access to more jobs, better pay & earlier access to our best opportunities.\",\n    \"created_at\": \"2026-10-13 18:43:40\",\n    \"updated_at\": \"2026-10-13 18:43:40\",\n    \"upper_threshold\": 3299,\n    \"es_description\": null,\n    \"es_name\": null\n  },\n  \"company_invites\": [],\n  \"organizations\": [],\n  \"organization_affiliations\": [],\n  \"referred_by\": null,\n  \"locale\": null,\n  \"blacklists\": [],\n  \"company\": null,\n  \"permissions_v1\": [\n    {\n      \"id\": 7,\n      \"description\": \"Marketplace\",\n      \"es_description\": null,\n      \"code_permission_type_id\": 3\n    }\n  ],\n  \"permissions_v2\": [\n    {\n      \"id\": 7,\n      \"description\": \"Marketplace\",\n      \"es_description\": null,\n      \"code_permission_type_id\": 3,\n      \"permissionable_id\": 2369\n    }\n  ]\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:41 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'HubSpot account-info + Forge env',
-      status: 200,
-      body: 'HUBSPOT_ACCESS_TOKEN → accountType DEVELOPER_TEST, portalId 343607524. use_hubspot_sync=1.',
-      ok: true,
-      note: 'Sandbox. HUBSPOT_ACCESS_TOKEN_STANDARD is STANDARD portal 343386062 — note only.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/user",
+     "status": 200,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "500",
+      "X-RateLimit-Remaining": "499"
+     },
+     "body": "{\n  \"id\": 2378,\n  \"first_name\": \"T317\",\n  \"last_name\": \"Wx\",\n  \"email\": \"waz+t317nw1300587@mail.grokbot.com\",\n  \"phone_number\": \"+14035560687\",\n  \"company_name\": null,\n  \"location_radius\": null,\n  \"device_arn\": null,\n  \"profile_picture_link\": null,\n  \"confirmed\": true,\n  \"terms\": true,\n  \"date_signed_up\": \"2026-10-29\",\n  \"created_at\": \"2026-10-29 12:03:10\",\n  \"date_of_birth\": \"1990-01-01\",\n  \"bio\": null,\n  \"notes\": null,\n  \"notifications\": true,\n  \"facebook_id\": null,\n  \"contractor_ios_app_version\": null,\n  \"contractor_android_app_version\": null,\n  \"contractor_web_app\": null,\n  \"worker_ios_app_version\": null,\n  \"worker_android_app_version\": null,\n  \"worker_web_app\": null,\n  \"last_login_at\": null,\n  \"city_id\": null,\n  \"completed_references_at\": null,\n  \"direct_deposit_filled\": false,\n  \"title\": null,\n  \"company_id\": null,\n  \"referral_code\": \"t3172\",\n  \"set_unavailable_at\": null,\n  \"first_worked_at\": null,\n  \"alpha_tester\": null,\n  \"completed_sin_at\": null,\n  \"gamify_level_id\": 1,\n  \"gamify_points\": 0,\n  \"code_locale_id\": null,\n  \"setting_on_call\": false,\n  \"address_street_number\": null,\n  \"address_street_name\": null,\n  \"address_city\": null,\n  \"address_province\": null,\n  \"address_country\": null,\n  \"address_postal_code\": null,\n  \"address_img_url\": null,\n  \"whistle_blower_alert\": 0,\n  \"w2_verified_at\": null,\n  \"code_worker_location_status_id\": null,\n  \"code_integrated_app_id\": null,\n  \"integrated_app_user_id\": null,\n  \"unsubscribe_from_email\": false,\n  \"converted_attempted_jobs_at\": null,\n  \"score\": null,\n  \"intercom_hash\": \"7af50b6ab2d6ff75e39fcb9c53c9a8ffb36d85867829a865d718417640d64210\",\n  \"token_version\": 0,\n  \"temporary_password_created_at\": null,\n  \"emergency_contact_name\": null,\n  \"emergency_contact_phone_number\": null,\n  \"job_success_score\": null,\n  \"email_verified_at\": null,\n  \"marked_for_deletion_at\": null,\n  \"user_deleted_at\": null,\n  \"early_score\": null,\n  \"has_applied_to_job\": false,\n  \"referrals_count\": 0,\n  \"address\": {\n    \"description\": null,\n    \"unit_number\": null,\n    \"location\": {\n      \"lat\": 37.3388,\n      \"lng\": -121.8916\n    },\n    \"street_number\": null,\n    \"street_name\": null,\n    \"city\": null,\n    \"province\": null,\n    \"country\": null,\n    \"postal_code\": null,\n    \"img_url\": null\n  },\n  \"geolocation\": {\n    \"city\": \"San Jose\",\n    \"province\": \"CA\",\n    \"country\": \"US\",\n    \"location\": {\n      \"lat\": 37.3388,\n      \"lng\": -121.8916\n    }\n  },\n  \"new\": true,\n  \"rating_percentage\": null,\n  \"rating\": null,\n  \"rating_skill_match\": null,\n  \"rating_quality_of_work\": null,\n  \"rating_efficiency\": null,\n  \"rating_effort\": null,\n  \"rating_attendance\": null,\n  \"rating_professionalism\": null,\n  \"use_cases\": [],\n  \"permissions\": [\n    {\n      \"id\": 7,\n      \"description\": \"Marketplace\",\n      \"es_description\": \"Marketplace\",\n      \"code_permission_type_id\": 3,\n      \"laravel_through_key\": 2378\n    }\n  ],\n  \"job_success_score_rating\": null,\n  \"tax_terms_accepted\": null,\n  \"instant_payable\": false,\n  \"instant_pay_fee\": {\n    \"description\": \"5%\"\n  },\n  \"user_role\": {\n    \"id\": 2,\n    \"description\": \"Worker\",\n    \"es_description\": \"Trabajador\"\n  },\n  \"worker_status\": {\n    \"id\": 0,\n    \"description\": \"Onboarding Incomplete\",\n    \"es_description\": \"Incorporaci\\u00f3n incompleta\"\n  },\n  \"bank_account\": null,\n  \"gamify_level\": {\n    \"id\": 1,\n    \"name\": \"Faber Starter\",\n    \"threshold\": -2147483648,\n    \"description\": \"Welcome to Faber Starter! As you begin working on the Faber platform, you\\u2019ll gain access to more jobs, better pay & earlier access to our best opportunities.\",\n    \"created_at\": \"2019-07-23 23:01:49\",\n    \"updated_at\": \"2021-10-12 16:47:34\",\n    \"upper_threshold\": 3299,\n    \"es_description\": \"Bienvenido a Faber Starter! A medida que empieces a trabajar en la plataforma Faber, tendr\\u00e1s acceso a m\\u00e1s empleos, mejores salarios y acceso m\\u00e1s temprano a nuestras mejores oportunidades.\",\n    \"es_name\": \"Arrancador Faber\"\n  },\n  \"company_invites\": [],\n  \"organizations\": [],\n  \"organization_affiliations\": [],\n  \"referred_by\": null,\n  \"locale\": null,\n  \"blacklists\": [],\n  \"company\": null,\n  \"permissions_v1\": [\n    {\n      \"id\": 7,\n      \"description\": \"Marketplace\",\n      \"es_description\": \"Marketplace\",\n      \"code_permission_type_id\": 3\n    }\n  ],\n  \"permissions_v2\": [\n    {\n      \"id\": 7,\n      \"description\": \"Marketplace\",\n      \"es_description\": \"Marketplace\",\n      \"code_permission_type_id\": 3,\n      \"laravel_through_key\": 2378\n    }\n  ]\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:41 MST"
     },
-    time: '2026-10-29 11:52 MST',
-    verdict: 'Pass — primary token is DEVELOPER_TEST sandbox; sync flag on.'
-  },
-  {
-    id: 'P7',
-    section: 'pre',
-    name: 'wkhtmltopdf OpenSSL 3',
-    status: 'pass',
-    linear: 'P7 · wkhtmltopdf jammy / OpenSSL 3',
-    simple: 'SSH check: wkhtmltopdf --version is the OpenSSL 3 jammy build.',
-    sent: { method: 'Forge Commands', url: 'staging5', body: 'wkhtmltopdf --version; which; WKHTMLTOPDF_BINARY' },
-    old: {
-      label: 'OLD · local',
-      url: '—',
-      status: null,
-      body: 'N/A — precondition is staging5 server binary.',
-      ok: true,
-      note: 'PDF parity later compares API outputs.'
+    "time": "2026-10-29 12:12:41 MST",
+    "id": "J1-02d",
+    "name": "GET /user (worker token)",
+    "parentId": "J1-02"
+   }
+  ],
+  "status": "warn",
+  "verdict": ""
+ },
+ {
+  "id": "J1-03",
+  "section": "jwt",
+  "name": "Wrong-app login rejected",
+  "linear": "\u00a71 \u00b7 wrong app \u2192 clean 4xx, not 500",
+  "simple": "Customer into worker app, worker into contractor app.",
+  "note": "",
+  "children": [
+   {
+    "method": "POST",
+    "path": "/auth/worker",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 400 / NEW 400 (expected 400). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/worker",
+     "status": 400,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "296"
+     },
+     "body": "\"You have a contractor account. Please use the Faber Contractor app instead.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317oc1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:41 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'Forge Commands',
-      status: 200,
-      body: 'wkhtmltopdf 0.12.6.1 (with patched qt)\n/usr/local/bin/wkhtmltopdf\nWKHTMLTOPDF_BINARY=unset',
-      ok: true,
-      note: 'Installed at expected path; env var unset is fine.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/worker",
+     "status": 400,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "296"
+     },
+     "body": "\"You have a contractor account. Please use the Faber Contractor app instead.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317nc1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:42 MST"
     },
-    time: '2026-10-29 12:00 MST',
-    verdict: 'Pass — wkhtmltopdf present on staging5.'
-  },
-  {
-    id: 'J1-01',
-    section: 'jwt',
-    name: 'Admin login + GET /user',
-    status: 'pass',
-    linear: '§1 · POST /auth/admin → token; GET /user returns admin',
-    simple: 'Log in as admin on both servers, then call GET /user with the Bearer token. Expect 200 + token, and the user must be role Admin.',
-    sent: {
-      method: 'POST then GET',
-      path: '/auth/admin → /user',
-      body: '{ email, password } then Authorization: Bearer <token>',
-      note: 'Passwords redacted. JWT redacted in bodies.'
+    "time": "2026-10-29 12:12:42 MST",
+    "id": "J1-03a",
+    "name": "POST /auth/worker (customer account)",
+    "parentId": "J1-03"
+   },
+   {
+    "method": "POST",
+    "path": "/auth/contractor",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 400 / NEW 400 (expected 400). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/contractor",
+     "status": 400,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "295"
+     },
+     "body": "\"You have a worker account. Please use the Faber Worker app instead.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317ow1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:42 MST"
     },
-    old: {
-      label: 'OLD · local :8001',
-      url: 'http://127.0.0.1:8001/auth/admin + /user',
-      status: 200,
-      body: 'auth: { "token": "<JWT>" }\nuser: id 2, email waz+faber-admin@mail.grokbot.com, user_role Admin (id 3)',
-      ok: true,
-      note: 'Local admin account on faber_local.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/contractor",
+     "status": 400,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "295"
+     },
+     "body": "\"You have a worker account. Please use the Faber Worker app instead.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317nw1300587@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:43 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'https://staging5.faberconnect.com/auth/admin + /user',
-      status: 200,
-      body: 'auth: { "token": "<JWT>" }\nuser: id 163, email jordan+1@faberconnect.com, user_role Admin (id 3)',
-      ok: true,
-      note: 'Staging admin; role matches Linear expectation.'
+    "time": "2026-10-29 12:12:43 MST",
+    "id": "J1-03b",
+    "name": "POST /auth/contractor (worker account)",
+    "parentId": "J1-03"
+   }
+  ],
+  "status": "pass",
+  "verdict": "Pass \u2014 all 2 calls pass."
+ },
+ {
+  "id": "J1-04",
+  "section": "jwt",
+  "name": "Unconfirmed account \u2192 403",
+  "linear": "\u00a71 \u00b7 unconfirmed /auth/contractor \u2192 403",
+  "simple": "Registered, never confirmed.",
+  "note": "",
+  "children": [
+   {
+    "method": "POST",
+    "path": "/auth/contractor",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 403 / NEW 403 (expected 403). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/contractor",
+     "status": 403,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "294"
+     },
+     "body": "\"You have not verified your account. Please resend the verification code.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317ou2300671@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:43 MST"
     },
-    time: '2026-10-29 12:01 MST',
-    verdict: 'Pass — both sides return 200 token and Admin user on GET /user.'
-  },
-  {
-    id: 'J1-02',
-    section: 'jwt',
-    name: 'Contractor + worker login',
-    status: 'pass',
-    linear: '§1 · POST /auth/contractor + /auth/worker → token; GET /user right role',
-    simple: 'Register/confirm a customer and a worker on each side, log in on the matching app route, then GET /user. Expect 200 token and the matching role (Contractor / Worker).',
-    sent: {
-      method: 'POST then GET',
-      path: '/auth/contractor + /auth/worker → /user',
-      body: '{ email, password } then Authorization: Bearer <token>',
-      note: 'Fresh confirmed accounts this pass. JWT redacted.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/contractor",
+     "status": 403,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "294"
+     },
+     "body": "\"You have not verified your account. Please resend the verification code.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317nu2300671@mail.grokbot.com\",\n  \"password\": \"<PASSWORD>\"\n}",
+     "at": "2026-10-29 12:12:43 MST"
     },
-    old: {
-      label: 'OLD · local :8001',
-      url: 'http://127.0.0.1:8001',
-      status: 200,
-      body: 'contractor: token + user id 2368 role Contractor (1)\nworker: token + user id 2369 role Worker (2)',
-      ok: true,
-      note: 'Both logins 200; roles correct.'
+    "time": "2026-10-29 12:12:43 MST",
+    "id": "J1-04a",
+    "name": "POST /auth/contractor (unconfirmed)",
+    "parentId": "J1-04"
+   }
+  ],
+  "status": "pass",
+  "verdict": "Pass \u2014 all 1 calls pass."
+ },
+ {
+  "id": "J1-05",
+  "section": "jwt",
+  "name": "Bad password \u00d78 (no throttle)",
+  "linear": "\u00a71 \u00b7 bad password \u2192 401/400, throttle not early",
+  "simple": "Wrong password 8\u00d7 fast. Calls 2\u20137 identical to #1.",
+  "note": "",
+  "children": [
+   {
+    "method": "POST",
+    "path": "/auth/contractor",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 401 / NEW 401 (expected 401). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "All 8 statuses \u2014 OLD [401, 401, 401, 401, 401, 401, 401, 401] \u00b7 NEW [401, 401, 401, 401, 401, 401, 401, 401]. No 429.",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/contractor",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "293"
+     },
+     "body": "\"You have provided invalid credentials.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317oc1300587@mail.grokbot.com\",\n  \"password\": \"WrongPass999! (deliberately wrong)\"\n}",
+     "at": "2026-10-29 12:12:43 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'https://staging5.faberconnect.com',
-      status: 200,
-      body: 'contractor: token + user id 2377 role Contractor (1)\nworker: token + user id 2378 role Worker (2)',
-      ok: true,
-      note: 'Both logins 200; roles correct.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/contractor",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "293"
+     },
+     "body": "\"You have provided invalid credentials.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317nc1300587@mail.grokbot.com\",\n  \"password\": \"WrongPass999! (deliberately wrong)\"\n}",
+     "at": "2026-10-29 12:12:44 MST"
     },
-    time: '2026-10-29 12:04 MST',
-    verdict: 'Pass — contractor and worker login + GET /user roles match on OLD and NEW.'
-  },
-  {
-    id: 'J1-03',
-    section: 'jwt',
-    name: 'Wrong-app login rejected',
-    status: 'pass',
-    linear: '§1 · wrong app → clean 4xx, not 500',
-    simple: 'Log a customer into /auth/worker and a worker into /auth/contractor. Expect a clean 4xx with a message, never a 500.',
-    sent: {
-      method: 'POST',
-      path: '/auth/worker (customer) + /auth/contractor (worker)',
-      body: '{ email, password } for the wrong app',
-      note: 'Same confirmed accounts as J1-02.'
+    "time": "2026-10-29 12:12:44 MST",
+    "id": "J1-05a",
+    "name": "POST /auth/contractor \u2014 try #1",
+    "parentId": "J1-05"
+   },
+   {
+    "method": "POST",
+    "path": "/auth/contractor",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 401 / NEW 401 (expected 401). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "All 8 statuses \u2014 OLD [401, 401, 401, 401, 401, 401, 401, 401] \u00b7 NEW [401, 401, 401, 401, 401, 401, 401, 401]. No 429.",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/auth/contractor",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "286"
+     },
+     "body": "\"You have provided invalid credentials.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317oc1300587@mail.grokbot.com\",\n  \"password\": \"WrongPass999! (deliberately wrong)\"\n}",
+     "at": "2026-10-29 12:12:49 MST"
     },
-    old: {
-      label: 'OLD · local :8001',
-      url: 'http://127.0.0.1:8001',
-      status: 400,
-      body: 'customer→worker: "You have a contractor account. Please use the Faber Contractor app instead."\nworker→contractor: "You have a worker account. Please use the Faber Worker app instead."',
-      ok: true,
-      note: 'Clean 400, no 500.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/auth/contractor",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "300",
+      "X-RateLimit-Remaining": "286"
+     },
+     "body": "\"You have provided invalid credentials.\"",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+     },
+     "reqBody": "{\n  \"email\": \"waz+t317nc1300587@mail.grokbot.com\",\n  \"password\": \"WrongPass999! (deliberately wrong)\"\n}",
+     "at": "2026-10-29 12:12:50 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'https://staging5.faberconnect.com',
-      status: 400,
-      body: 'customer→worker: "You have a contractor account. Please use the Faber Contractor app instead."\nworker→contractor: "You have a worker account. Please use the Faber Worker app instead."',
-      ok: true,
-      note: 'Identical messages to OLD.'
+    "time": "2026-10-29 12:12:50 MST",
+    "id": "J1-05b",
+    "name": "POST /auth/contractor \u2014 try #8",
+    "parentId": "J1-05"
+   }
+  ],
+  "status": "pass",
+  "verdict": "Pass \u2014 all 2 calls pass."
+ },
+ {
+  "id": "J1-06",
+  "section": "jwt",
+  "name": "No token \u2192 token_not_provided",
+  "linear": "\u00a71 \u00b7 GET /user no header \u2192 401",
+  "simple": "",
+  "note": "",
+  "children": [
+   {
+    "method": "GET",
+    "path": "/user",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 401 / NEW 401 (expected 401). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/user",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": "{\n  \"error\": \"token_not_provided\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:50 MST"
     },
-    time: '2026-10-29 12:05 MST',
-    verdict: 'Pass — both sides return 400 with the expected wrong-app messages.'
-  },
-  {
-    id: 'J1-04',
-    section: 'jwt',
-    name: 'Unconfirmed account → 403',
-    status: 'pass',
-    linear: '§1 · unconfirmed /auth/contractor → 403',
-    simple: 'Register a customer and do not confirm. Login on /auth/contractor must return 403 so the FE can show confirm-email.',
-    sent: {
-      method: 'POST',
-      path: '/auth/contractor',
-      body: '{ email of unconfirmed customer, password }',
-      note: 'Account registered but never confirmed.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/user",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": "{\n  \"error\": \"token_not_provided\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:50 MST"
     },
-    old: {
-      label: 'OLD · local :8001',
-      url: 'http://127.0.0.1:8001/auth/contractor',
-      status: 403,
-      body: '"You have not verified your account. Please resend the verification code."',
-      ok: true,
-      note: '403 as required for FE confirm flow.'
+    "time": "2026-10-29 12:12:50 MST",
+    "id": "J1-06a",
+    "name": "GET /user (no Authorization)",
+    "parentId": "J1-06"
+   }
+  ],
+  "status": "pass",
+  "verdict": "Pass \u2014 all 1 calls pass."
+ },
+ {
+  "id": "J1-07",
+  "section": "jwt",
+  "name": "Garbage token \u2192 token_invalid",
+  "linear": "\u00a71 \u00b7 Bearer abc.def.ghi \u2192 401",
+  "simple": "",
+  "note": "",
+  "children": [
+   {
+    "method": "GET",
+    "path": "/user",
+    "status": "pass",
+    "verdict": "Pass \u2014 OLD 401 / NEW 401 (expected 401). Shape: identical keys/types.",
+    "diffs": [],
+    "note": "",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/user",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": "{\n  \"error\": \"token_invalid\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer abc.def.ghi"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:50 MST"
     },
-    new: {
-      label: 'NEW · staging5',
-      url: 'https://staging5.faberconnect.com/auth/contractor',
-      status: 403,
-      body: '"You have not verified your account. Please resend the verification code."',
-      ok: true,
-      note: 'Same 403 message as OLD.'
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/user",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": "{\n  \"error\": \"token_invalid\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer abc.def.ghi"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:51 MST"
     },
-    time: '2026-10-29 12:05 MST',
-    verdict: 'Pass — both sides 403 for unconfirmed contractor login.'
-  },
-  {
-    id: 'J1-05',
-    section: 'jwt',
-    name: 'Bad password (no throttle)',
-    status: 'pass',
-    linear: '§1 · bad password → 401/400, throttle not early',
-    simple: 'Wrong password 8 times quickly. Expect 401/400 with a message each time, not 500, and no throttle yet.',
-    sent: { method: 'POST×8', path: '/auth/contractor', body: '{ email, password: WrongPass999! }' },
-    old: { label: 'OLD · local', url: 'http://127.0.0.1:8001/auth/contractor', status: 401, body: '8× "You have provided invalid credentials." (no 429)', ok: true, note: 'Throttle did not fire.' },
-    new: { label: 'NEW · staging5', url: 'https://staging5.faberconnect.com/auth/contractor', status: 401, body: '8× "You have provided invalid credentials." (no 429)', ok: true, note: 'Same as OLD.' },
-    time: '2026-10-29 12:06 MST',
-    verdict: 'Pass — 401 message both sides; throttle not hit at 8 tries.'
-  },
-  {
-    id: 'J1-06',
-    section: 'jwt',
-    name: 'No token → token_not_provided',
-    status: 'pass',
-    linear: '§1 · GET /user no header → 401 token_not_provided',
-    simple: 'Call GET /user with no Authorization header.',
-    sent: { method: 'GET', path: '/user', body: '(no Authorization header)' },
-    old: { label: 'OLD · local', url: 'http://127.0.0.1:8001/user', status: 401, body: '{"error":"token_not_provided"}', ok: true, note: '' },
-    new: { label: 'NEW · staging5', url: 'https://staging5.faberconnect.com/user', status: 401, body: '{"error":"token_not_provided"}', ok: true, note: '' },
-    time: '2026-10-29 12:06 MST',
-    verdict: 'Pass — identical 401 token_not_provided.'
-  },
-  {
-    id: 'J1-07',
-    section: 'jwt',
-    name: 'Garbage token → token_invalid',
-    status: 'pass',
-    linear: '§1 · Bearer abc.def.ghi → 401 token_invalid',
-    simple: 'Call GET /user with Authorization: Bearer abc.def.ghi.',
-    sent: { method: 'GET', path: '/user', body: 'Authorization: Bearer abc.def.ghi' },
-    old: { label: 'OLD · local', url: 'http://127.0.0.1:8001/user', status: 401, body: '{"error":"token_invalid"}', ok: true, note: '' },
-    new: { label: 'NEW · staging5', url: 'https://staging5.faberconnect.com/user', status: 401, body: '{"error":"token_invalid"}', ok: true, note: '' },
-    time: '2026-10-29 12:06 MST',
-    verdict: 'Pass — identical 401 token_invalid.'
-  }
+    "time": "2026-10-29 12:12:51 MST",
+    "id": "J1-07a",
+    "name": "GET /user (Bearer abc.def.ghi)",
+    "parentId": "J1-07"
+   }
+  ],
+  "status": "pass",
+  "verdict": "Pass \u2014 all 1 calls pass."
+ },
+ {
+  "id": "J1-08",
+  "section": "jwt",
+  "name": "Expired token \u2192 refresh in header",
+  "linear": "\u00a71 \u00b7 expired token \u2192 200 + new token in Authorization header",
+  "simple": "GET /user with an expired token, then use the header token.",
+  "note": "",
+  "children": [
+   {
+    "method": "GET",
+    "path": "/user",
+    "status": "wait",
+    "verdict": "Not done \u2014 attempt captured; no refreshed token came back, so call 2 (GET /user with new token) could not run.",
+    "diffs": [],
+    "note": "These aged tokens (from /tmp/t317aged.json, exp 2026-10-28 14:14 MST) now return token_invalid on both sides with no Authorization header \u2014 they were already consumed/blacklisted or past refresh window. Need freshly-minted expired tokens to finish.",
+    "old": {
+     "label": "OLD \u00b7 local :8001",
+     "url": "http://127.0.0.1:8001/user",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": "{\n  \"error\": \"token_invalid\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:51 MST"
+    },
+    "new": {
+     "label": "NEW \u00b7 staging5",
+     "url": "https://staging5.faberconnect.com/user",
+     "status": 401,
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": "{\n  \"error\": \"token_invalid\"\n}",
+     "reqHeaders": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <JWT>"
+     },
+     "reqBody": null,
+     "at": "2026-10-29 12:12:52 MST"
+    },
+    "time": "2026-10-29 12:12:52 MST",
+    "id": "J1-08a",
+    "name": "GET /user (aged token) \u2014 attempt",
+    "parentId": "J1-08"
+   }
+  ],
+  "status": "wait",
+  "verdict": "Waiting \u2014 not ticked in Linear. Needs fresh expired tokens."
+ }
 ];
-
-const STATUS = {
-  pass: { cls: 'ok', badge: 'pass', label: 'Pass' },
-  fail: { cls: 'fail', badge: 'fail', label: 'Fail' },
-  wait: { cls: 'wait', badge: 'wait', label: 'Waiting' },
-  todo: { cls: 'todo', badge: 'todo', label: 'Not started' },
-  skip: { cls: 'skip', badge: 'skip', label: 'Skipped' }
-};
-
+const STATUS={pass:{cls:'ok',badge:'pass',label:'Pass'},warn:{cls:'warn',badge:'warn',label:'Pass · shape ⚠'},fail:{cls:'fail',badge:'fail',label:'Fail'},wait:{cls:'wait',badge:'wait',label:'Waiting'},todo:{cls:'todo',badge:'todo',label:'Not started'},skip:{cls:'skip',badge:'skip',label:'Skipped'}};
 function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-
-function sideHtml(s){
-  if(!s) return `<div class="side"><h4>Not run</h4><p class="meta">No request yet.</p></div>`;
-  return `<div class="side">
-    <h4>${esc(s.label)}</h4>
-    <div class="code ${s.ok?'ok':'bad'}">${esc(s.status)}</div>
-    <div class="meta" style="margin-top:4px">${esc(s.url)}</div>
-    <div class="label" style="margin-top:12px">Body</div>
-    <pre>${esc(s.body)}</pre>
-    ${s.note?`<p class="meta">${esc(s.note)}</p>`:''}
-  </div>`;
-}
-
-function openM(id){
-  const t=TESTS.find(x=>x.id===id); if(!t) return;
-  const st=STATUS[t.status];
-  const sentPath = t.sent ? (t.sent.path || t.sent.url || '') : '';
-  const sentBody = t.sent && t.sent.body != null
-    ? (typeof t.sent.body === 'string' ? t.sent.body : JSON.stringify(t.sent.body,null,2))
-    : '(no body)';
-  const sent = t.sent
-    ? `<div class="req"><div class="label">What we sent</div>
-        <pre>${esc(t.sent.method)} ${esc(sentPath)}\n${esc(sentBody)}${t.sent.note?'\n\n'+esc(t.sent.note):''}</pre></div>`
-    : `<div class="req"><div class="label">What we sent</div><p class="meta">Nothing sent yet.</p></div>`;
-  document.getElementById('mbox').innerHTML=`
-    <button class="close" onclick="closeM()">×</button>
-    <span class="badge ${st.badge}">${st.label}</span>
-    <h3>${esc(t.id)} · ${esc(t.name)}</h3>
-    <div class="meta">${esc(t.linear)}</div>
-    <p class="desc">${esc(t.simple)}</p>
-    ${sent}
-    <div class="label">What came back</div>
-    <div class="sides">${sideHtml(t.old)}${sideHtml(t.new)}</div>
-    <p><strong>${esc(t.verdict)}</strong></p>
-    ${t.time?`<p class="meta">Checked: ${esc(t.time)}</p>`:''}
-  `;
-  document.getElementById('modal').classList.add('open');
-  document.body.style.overflow='hidden';
-  location.hash=id;
-}
-function closeM(){
-  document.getElementById('modal').classList.remove('open');
-  document.body.style.overflow='';
-  if(location.hash) history.replaceState(null,'',location.pathname);
-}
-
-function render(){
-  const passed=TESTS.filter(t=>t.status==='pass').length;
-  const failed=TESTS.filter(t=>t.status==='fail').length;
-  const skipped=TESTS.filter(t=>t.status==='skip').length;
-  const waiting=TESTS.filter(t=>t.status==='wait').length;
-  document.getElementById('banner').innerHTML=
-    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: expired-token refresh. Click any row for details.`;
-
-  function rowsFor(sec){
-    const list=TESTS.filter(t=>t.section===sec);
-    if(!list.length) return `<p class="sec-empty">Not started.</p>`;
-    const rows=list.map(t=>{
-      const st=STATUS[t.status];
-      const evid = t.status==='pass'
-        ? `NEW ${t.new.status} · OLD ${t.old.status} · click for detail`
-        : (t.status==='skip'?'Skipped':(t.status==='wait'?'Needs Forge':'—'));
-      return `<tr class="click" onclick="openM('${t.id}')">
-      <td class="${st.cls}">${st.label}</td>
-      <td><strong>${esc(t.id)}</strong> · ${esc(t.name)}<div class="hint">${esc(t.linear)}</div></td>
-      <td class="meta">${esc(evid)}</td>
-    </tr>`;
-    }).join('');
-    return `<p class="hint">Click a row to open the popup.</p>
-    <table><thead><tr><th style="width:110px">Status</th><th>Test</th><th>Evidence</th></tr></thead>
-    <tbody>${rows}</tbody></table>`;
-  }
-
-  document.getElementById('main').innerHTML=`
-    <table class="sum"><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>
-      <tr><td class="ok">Pass</td><td>${passed}</td></tr>
-      <tr><td class="fail">Fail</td><td>${failed}</td></tr>
-      <tr><td class="skip">Skipped</td><td>${skipped}</td></tr>
-      <tr><td class="wait">Waiting</td><td>${waiting}</td></tr>
-      <tr><td class="todo">Not started</td><td>${TESTS.filter(t=>t.status==='todo').length}</td></tr>
-    </tbody></table>
-    <h2>Preconditions</h2>
-    ${rowsFor('pre')}
-    <h2>§1 JWT</h2>
-    ${rowsFor('jwt')}
-    <h2>§2 OTP / v2 auth</h2>
-    ${rowsFor('otp')}
-    <h2>§3 Stripe</h2>
-    ${rowsFor('stripe')}
-    <h2>§4 Hours</h2>
-    ${rowsFor('hours')}
-    <h2>§5 Worker pay</h2>
-    ${rowsFor('pay')}
-    <h2>§6 Invoices / PDFs</h2>
-    ${rowsFor('invoice')}
-    <h2>§7 Regression</h2>
-    ${rowsFor('reg')}
-  `;
-  const h=location.hash.slice(1); if(h) openM(h);
-}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
-render();
-</script>
-</body>
-</html>
+function hdrs(h){const k=Object.keys(h||{});return k.length?k.map(x=>x+': '+h[x]).join('\n'):'(none of interest)'}
+function find(id){for(const t of TESTS){if(t.id===id)return {t};for(const c of (t.children||[]))if(c.id===id)return {t:c,parent:t,n:t.children.indexOf(c)+1}}}
+function sideHtml(s){return `<div class="side"><h4>${esc(s.label)}</h4>
+ <div class="code ${s.status<400?'ok':'bad'}">${esc(s.status)}</div>
+ <div class="meta mono" style="margin-top:4px">${esc(s.url)}</div>
+ <div class="label" style="margin-top:12px">Response headers</div><pre>${esc(hdrs(s.headers))}</pre>
+ <div class="label" style="margin-top:12px">Response body (full)</div><pre>${esc(s.body)}</pre>
+ <p class="meta">Captured ${esc(s.at)}</p></div>`}
+function sentHtml(c){const r=s=>`${esc(c.method)} ${esc(s.url)}\n${esc(hdrs(s.reqHeaders))}\n\n${esc(s.reqBody??'(no body)')}`;
+ return `<div class="req"><div class="label">What we sent</div><div class="sides"><div><div class="meta">OLD</div><pre>${r(c.old)}</pre></div><div><div class="meta">NEW</div><pre>${r(c.new)}</pre></div></div></div>`}
+function callHtml(c,n,parent){const st=STATUS[c.status];
+ return `<span class="badge ${st.badge}">${st.label}</span>
+ <h3>${esc(c.id)} · Call ${n} · <span class="mono">${esc(c.method)} ${esc(c.path)}</span></h3>
+ <div class="meta">Part of ${esc(parent.id)} · ${esc(parent.name)} — ${esc(parent.linear)}</div>
+ ${sentHtml(c)}
+ <div class="label">What came back</div><div class="sides">${sideHtml(c.old)}${sideHtml(c.new)}</div>
+ ${c.diffs.length?`<div class="diffs"><strong>Shape differences (OLD vs NEW)</strong><pre style="background:none;color:inherit;padding:0">${esc(c.diffs.join('\n'))}</pre></div>`:''}
+ ${c.note?`<p class="meta">${esc(c.note)}</p>`:''}
+ <p><strong>Verdict: ${esc(c.verdict)}</strong></p>`}
+function openM(id){const f=find(id);if(!f)return;const t=f.t;let h='';
+ if(f.parent) h=callHtml(t,f.n,f.parent);
+ else if(t.children){const st=STATUS[t.status];
+  h=`<span class="badge ${st.badge}">${st.label}</span><h3>${esc(t.id)} · ${esc(t.name)}</h3><div class="meta">${esc(t.linear)}</div><p class="desc">${esc(t.simple)}</p>
+  <table><thead><tr><th>Call</th><th>Request</th><th>OLD</th><th>NEW</th><th>Result</th></tr></thead><tbody>${t.children.map((c,i)=>`<tr class="click" onclick="openM('${c.id}')"><td>${i+1} · ${esc(c.id)}</td><td class="mono">${esc(c.method)} ${esc(c.path)}<div class="hint">${esc(c.name)}</div></td><td>${c.old.status}</td><td>${c.new.status}</td><td class="${STATUS[c.status].cls}">${STATUS[c.status].label}</td></tr>`).join('')}</tbody></table>
+  <p class="hint">Click a call for its full report.</p><p><strong>${esc(t.verdict)}</strong></p>`}
+ else {const st=STATUS[t.status];
+  h=`<span class="badge ${st.badge}">${st.label}</span><h3>${esc(t.id)} · ${esc(t.name)}</h3><div class="meta">${esc(t.linear)}</div>
+  <div class="req"><div class="label">What we did</div><pre>${esc(t.sent)}</pre></div>
+  <div class="sides"><div class="side"><h4>OLD</h4><pre>${esc(t.oldS)}</pre></div><div class="side"><h4>NEW</h4><pre>${esc(t.newS)}</pre></div></div>
+  <p><strong>${esc(t.verdict)}</strong></p><p class="meta">Checked ${esc(t.time)}</p>`}
+ document.getElementById('mbox').innerHTML=`<button class="close" onclick="closeM()">×</button>`+h;
+ document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden';location.hash=id;window.scrollTo(0,0);document.getElementById('modal').scrollTop=0}
+function closeM(){document.getElementById('modal').classList.remove('open');document.body.style.overflow='';if(location.hash)history.replaceState(null,'',location.pathname)}
+function render(){const c=s=>TESTS.filter(t=>t.status===s).length;const calls=TESTS.reduce((a,t)=>a+(t.children||[]).length,0);
+ document.getElementById('banner').innerHTML=`<strong>In progress.</strong> ${c('pass')} pass · ${c('warn')} pass with shape ⚠ · ${c('fail')} fail · ${c('skip')} skipped · ${c('wait')} waiting. ${calls} API calls, each with its own report. Click a test for its call list, or an indented call row for the full OLD/NEW report.`;
+ function rows(sec){const l=TESTS.filter(t=>t.section===sec);if(!l.length)return `<p class="sec-empty">Not started.</p>`;
+  return `<table><thead><tr><th style="width:140px">Status</th><th>Test / API call</th><th style="width:170px">OLD → NEW</th></tr></thead><tbody>${l.map(t=>{const st=STATUS[t.status];
+   let r=`<tr class="click" onclick="openM('${t.id}')"><td class="${st.cls}">${st.label}</td><td><strong>${esc(t.id)}</strong> · ${esc(t.name)}<div class="hint">${esc(t.linear)}</div></td><td class="meta">${t.children?t.children.length+' call'+(t.children.length>1?'s':''):'no API call'}</td></tr>`;
+   for(const ch of (t.children||[])){const s2=STATUS[ch.status];r+=`<tr class="click child" onclick="openM('${ch.id}')"><td class="${s2.cls}">↳ ${s2.label}</td><td class="tname"><strong>${esc(ch.id)}</strong> · <span class="mono">${esc(ch.method)} ${esc(ch.path)}</span><div class="hint">${esc(ch.name)}</div></td><td class="meta">${ch.old.status} → ${ch.new.status}</td></tr>`}
+   return r}).join('')}</tbody></table>`}
+ document.getElementById('main').innerHTML=`<h2>Preconditions</h2>${rows('pre')}<h2>§1 JWT</h2>${rows('jwt')}`+['§2 OTP / v2 auth','§3 Stripe','§4 Hours','§5 Worker pay','§6 Invoices / PDFs','§7 Regression'].map(x=>`<h2>${x}</h2><p class="sec-empty">Not started.</p>`).join('');
+ const h=location.hash.slice(1);if(h)openM(h)}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});render();
+</script></body></html>
