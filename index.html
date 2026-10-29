@@ -1,76 +1,105 @@
-<!doctype html><html><head><meta charset="utf-8"><title>TECH-317 QA Dashboard</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TECH-317 · OLD vs NEW API QA</title>
 <style>
-body{margin:0;background:#0d1117;color:#c9d1d9;font:14px system-ui,sans-serif}
-nav{position:sticky;top:0;background:#161b22;border-bottom:1px solid #30363d;display:flex;gap:4px;padding:8px 16px;z-index:9;flex-wrap:wrap}
-nav a{color:#c9d1d9;text-decoration:none;padding:6px 12px;border-radius:6px}nav a.on,nav a:hover{background:#30363d;color:#fff}
-main{padding:16px 24px;max-width:1500px}h1{font-size:20px}h3{margin:14px 0 6px}
-.cards{display:flex;gap:12px;flex-wrap:wrap}.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;min-width:230px;cursor:pointer}
-.card:hover{border-color:#58a6ff}
-table{width:100%;border-collapse:collapse}th{text-align:left;color:#8b949e;font-weight:500;border-bottom:1px solid #30363d;padding:6px}
-tr.row td{padding:7px 6px;border-bottom:1px solid #21262d;cursor:pointer}tr.row:hover td{background:#1c2330}tr.row.open td{background:#1f2a3a}
-.v{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;margin:1px}
-.PASS{background:#1f6f3a;color:#fff}.MISMATCH{background:#8e1f1f;color:#fff}.BOTH-BUG{background:#a3005c;color:#fff}.BLOCKED{background:#5a4a12;color:#fff}
-.PARTIAL{background:#8a5a00;color:#fff}.EXPECTED-DIFF{background:#1f4d8e;color:#fff}.SKIPPED,.INVALID{background:#444;color:#fff}
-.det td{background:#0b0f15;padding:12px 16px;border-bottom:2px solid #30363d}
-.probe{border:1px solid #30363d;border-radius:8px;margin:10px 0;padding:10px}.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.side{background:#161b22;border-radius:6px;padding:8px;min-width:0}pre{white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto;background:#010409;padding:8px;border-radius:4px;font-size:12px;margin:4px 0}
-.k{color:#8b949e}input{background:#010409;color:#c9d1d9;border:1px solid #30363d;padding:6px;border-radius:6px;width:300px}
-.hubrow a{color:#58a6ff;text-decoration:none}.hubrow td{padding:9px 6px;border-bottom:1px solid #21262d}.hubrow.bad td:first-child{border-left:4px solid #f85149}
-#ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;z-index:50;overflow:auto}#ov.on{display:block}
-#mod{background:#0d1117;border:1px solid #30363d;border-radius:10px;max-width:1200px;margin:40px auto;padding:20px;position:relative}
-#mod .x{position:absolute;right:14px;top:10px;font-size:22px;cursor:pointer;color:#8b949e}
-.issue{background:#2d1214;border:1px solid #f85149;border-radius:8px;padding:12px;margin:10px 0}.issue.ok{background:#0f2a18;border-color:#2ea043}
-.legend{font-size:12px;color:#8b949e;margin:8px 0 14px;line-height:1.9}summary{cursor:pointer;color:#58a6ff;margin:8px 0}
-.NEW-BUG,.OLD-BUG{background:#a3005c;color:#fff}
-</style></head><body><nav id="nav"></nav><main id="main"></main><div id="ov" onclick="if(event.target==this)closeM()"><div id="mod"><span class="x" onclick="closeM()">✕</span><div id="mb"></div></div></div>
-<script src="data/data.js"></script><script>
-const Q=window.QA,M=document.getElementById('main');
-const LEG={'PASS':'old and new behave the same / as expected','EXPECTED-DIFF':'differs, but the difference is intended','PARTIAL':'not all planned probes ran (some blocked/skipped) — never treat as a pass','MISMATCH':'new API differs from old in a way that matters','BOTH-BUG':'old and new both wrong','OLD-BUG':'only old is wrong','NEW-BUG':'only new is wrong','INVALID':'test harness fault, result unusable','BLOCKED':'could not run (missing fixture/SMS/etc.)','SKIPPED':'intentionally not run'};
-const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const vb=v=>`<span class="v ${esc(String(v).split(" ")[0])}" title="${esc(LEG[String(v).split(" ")[0]]||"")}">${esc(v)}</span>`;
-const pj=o=>o==null?'<span class="k">null</span>':`<pre>${esc(typeof o=='string'?o:JSON.stringify(o,null,2))}</pre>`;
-const verd=c=>(c.result||{}).verdict||'?';
-const SEV=['BOTH-BUG','MISMATCH','NEW-BUG','OLD-BUG','INVALID','PARTIAL','BLOCKED','EXPECTED-DIFF','SKIPPED','PASS'];const sv=v=>{const i=SEV.indexOf(v);return i<0?5:i};
-const legend=()=>'<div class="legend">'+['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'].map(v=>`<span>${vb(v)} ${LEG[v]}</span>`).join(' &nbsp; ')+'</div>';
-const all=()=>Q.sections.flatMap(s=>s.cases.map(c=>[s,c]));
-function counts(cs){const m={};cs.forEach(c=>m[verd(c)]=(m[verd(c)]||0)+1);const O=['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'];const r=k=>{const i=O.indexOf(k);return i<0?99:i};return Object.keys(m).sort((a,b)=>r(a)-r(b)||a.localeCompare(b)).filter(k=>m[k]>0).map(k=>vb(k+' '+m[k])).join(' ')}
-function nav(cur){document.getElementById('nav').innerHTML=[['hub','Hub'],...Q.sections.map(s=>[s.key,s.title]),['both','Both-system bugs']].map(([k,t])=>`<a href="#${k}" class="${k==cur?'on':''}">${t}</a>`).join('')}
-function side(x){if(!x)return '<span class="k">not run</span>';const rq=x.request||{},rs=x.response||{};
-return `<div><b>${esc(rq.method)}</b> ${esc(rq.url)} <span class="k">${esc(x.call_id)} · ${esc(x.duration_ms)}ms</span></div>
-<div class="k">request headers</div>${pj(rq.headers)}<div class="k">request body</div>${pj(rq.body)}
-<div>status <b>${esc(rs.status)}</b> <span class="k">(${esc(rs.body_kind)})</span></div><div class="k">response headers</div>${pj(rs.headers)}<div class="k">response body</div>${pj(rs.body)}
-${Object.keys(x).filter(k=>!['request','response','call_id','duration_ms','side','started_at'].includes(k)).map(k=>`<div class="k">${esc(k)}</div>${pj(x[k])}`).join('')}`}
-function issue(c){const r=c.result||{},v=verd(c),ok=v=='PASS'||v=='EXPECTED-DIFF';
-const bad=(c.probes||[]).filter(p=>(p.verdict||p.status)!='PASS');
-let h=`<div class="issue ${ok?'ok':''}"><div style="font-size:16px">${vb(v)} <b>${esc(c.id)} — ${esc(c.name)}</b></div><p><b>Why:</b> ${esc((r.verdict_reason||LEG[v]||'').split(' — calls:')[0])}</p>`;
-if(bad.length){h+=`<table><thead><tr><th>Probe</th><th>Verdict</th><th>OLD status</th><th>NEW status</th><th>What differs</th></tr></thead><tbody>`+bad.map(p=>{const os=((p.old||{}).response||{}).status,ns=((p.new||{}).response||{}).status;const d=(p.diff&&p.diff.entries)||[];
-const ds=p.not_run?('not run: '+JSON.stringify(p.not_run).slice(0,160)):d.slice(0,4).map(e=>typeof e=='string'?e:(e.path||'')+' '+(e.kind||e.type||'')+(e.old!==undefined?' old='+JSON.stringify(e.old).slice(0,40):'')+(e.new!==undefined?' new='+JSON.stringify(e.new).slice(0,40):'')).join(' · ')+(d.length>4?` (+${d.length-4} more)`:'');
-return `<tr><td><b>${esc(p.probe_id)}</b><div class="k">${esc(p.intent)}</div></td><td>${vb(p.verdict||p.status)}</td><td><b style="color:${os!=ns?'#f85149':'inherit'}">${esc(os??'—')}</b></td><td><b style="color:${os!=ns?'#f85149':'inherit'}">${esc(ns??'—')}</b></td><td class="k">${esc(ds)}</td></tr>`}).join('')+'</tbody></table>'}
-else h+='<p class="k">All probes passed.</p>';return h+'</div>'}
-function detail(c){const r=c.result||{};
-let h=issue(c)+`<details><summary>Full capture (intent, setup, every probe with OLD/NEW request + response bodies)</summary><p><span class="k">Intent:</span> ${esc(c.intent)}</p>
-<p><span class="k">Expected:</span> ${esc((c.expected||{}).statement)} <span class="k">(${esc((c.expected||{}).source)})</span></p>
-${r.override?'<div class="k">override</div>'+pj(r.override):''}
-<details><summary>Result / coverage / compare rules / annotations</summary>${pj({result:r,compare_rules:c.compare_rules,annotations:c.annotations,fixtures:c.fixtures,credential_roles:c.credential_roles})}</details>
-<h3>Setup (${(c.setup||[]).length})</h3>${(c.setup||[]).length?pj(c.setup):'<span class="k">none</span>'}<h3>Probes (${(c.probes||[]).length})</h3>`;
-(c.probes||[]).forEach(p=>{h+=`<div class="probe"><div><b>${esc(p.probe_id)}</b> ${esc(p.intent)} ${vb(p.verdict||p.status)} <span class="k">status=${esc(p.status)}</span></div>
-<div class="k">expected: ${esc((p.expected||{}).statement)}</div>${p.not_run?'<div class="k">not_run</div>'+pj(p.not_run):''}
-${p.diff?'<div class="k">diff ('+esc(p.diff.count)+')</div>'+pj(p.diff.entries):''}${p.expectation_check?'<div class="k">expectation check</div>'+pj(p.expectation_check):''}
-${p.section_extras&&Object.keys(p.section_extras).length?'<div class="k">extras</div>'+pj(p.section_extras):''}
-<div class="sides"><div class="side"><b>OLD</b> ${side(p.old)}</div><div class="side"><b>NEW</b> ${side(p.new)}</div></div></div>`});
-h+=`<h3>Teardown</h3>${pj(c.teardown)}<div class="k">source: ${esc(c._file)}</div></details>`;return h}
-function table(rows,showSec){rows=rows.slice().sort((a,b)=>sv(verd(a[1]))-sv(verd(b[1])));window._rows=rows;return `<input id="f" placeholder="filter id / name / verdict" oninput="filt(this.value)"><table><thead><tr>${showSec?'<th>Section</th>':''}<th>Verdict</th><th>ID</th><th>Name</th><th>Why</th></tr></thead><tbody>`+
-rows.map(([s,c],i)=>`<tr class="row" data-i="${i}" data-t="${esc((c.id+' '+c.name+' '+verd(c)).toLowerCase())}" onclick="tog(this)">${showSec?`<td>${esc(s.title)}</td>`:''}<td>${vb(verd(c))}</td><td><b>${esc(c.id)}</b></td><td>${esc(c.name)}</td><td class="k" style="max-width:560px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(((c.result||{}).verdict_reason||LEG[verd(c)]||'').split(' — calls:')[0].split(/[;\n]|\. /)[0])}</td></tr>`).join('')+'</tbody></table>'}
-function tog(tr){const [x,c]=window._rows[tr.dataset.i];document.getElementById('mb').innerHTML=detail(c);document.getElementById('ov').classList.add('on');document.getElementById('ov').scrollTop=0;
-history.replaceState(null,'',(location.hash.split('/')[0]||'#hub')+'/'+c.id)}
-function closeM(){document.getElementById('ov').classList.remove('on');history.replaceState(null,'',location.hash.split('/')[0])}
-document.addEventListener('keydown',e=>{if(e.key=='Escape')closeM()});
-function filt(v){v=v.toLowerCase();document.querySelectorAll('tr.row').forEach(r=>{const h=!r.dataset.t.includes(v);r.style.display=h?'none':'';const n=r.nextElementSibling;if(n&&n.classList.contains('det'))n.style.display=h?'none':''})}
-function route(){const [k,open]=(location.hash.slice(1)||'hub').split('/');nav(k);
-if(k=='hub'){const O=['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'];const secs=Q.sections.map(s=>[s.key,s.title,s.cases]).concat([['both','Both-system bugs',all().filter(([s,c])=>verd(c)=='BOTH-BUG').map(x=>x[1])]]);secs.sort((a,b)=>{const w=cs=>-(cs.filter(c=>verd(c)=='BOTH-BUG').length*1000+cs.filter(c=>verd(c)=='MISMATCH').length*10+cs.filter(c=>verd(c)=='INVALID').length);return w(a[2])-w(b[2])});const used=O.filter(v=>secs.some(x=>x[2].some(c=>verd(c)==v)));
-M.innerHTML=`<h1>TECH-317 QA — Round 2</h1>${legend()}<p class="k">Sections sorted worst first. Click a row to open it.</p><table class="hub"><thead><tr><th>Section</th><th>Total</th>${used.map(v=>`<th>${vb(v)}</th>`).join('')}</tr></thead><tbody>`+secs.map(([key,title,cs])=>`<tr class="hubrow ${cs.some(c=>["BOTH-BUG","MISMATCH","INVALID"].includes(verd(c)))?"bad":""}" style="cursor:pointer" onclick="location.hash='${key}'"><td><a href="#${key}"><b>${title}</b></a></td><td>${cs.length}</td>${used.map(v=>{const n=cs.filter(c=>verd(c)==v).length;return `<td style="text-align:center">${n||'·'}</td>`}).join('')}</tr>`).join('')+`</tbody></table><style>tr.hubrow:hover{background:rgba(127,127,127,.15)}</style><p class="k">Click a section row, then click any test row to expand the full captured report.</p>`;return}
-let rows,t;if(k=='both'){rows=all().filter(([s,c])=>verd(c)=='BOTH-BUG');t='Both-system bugs (verdict BOTH-BUG)'}else{const s=Q.sections.find(x=>x.key==k);if(!s){M.innerHTML='unknown';return}rows=s.cases.map(c=>[s,c]);t=s.title+' — '+s.cases.length+' cases '+counts(s.cases)}
-document.getElementById('ov').classList.remove('on');M.innerHTML=`<h1>${t}</h1>`+legend()+(rows.length?table(rows,k=='both'):'<p>None.</p>');
-if(open){const tr=[...document.querySelectorAll('tr.row')].find(r=>window._rows[r.dataset.i][1].id==open);if(tr){tog(tr)}}}
-window.onhashchange=route;route();
+:root{--bg:#fafaf9;--card:#fff;--ink:#1c1917;--mute:#78716c;--line:#e7e5e4;--soft:#f5f5f4;
+--red:#b91c1c;--redbg:#fef2f2;--amb:#b45309;--ambbg:#fffbeb;--grn:#15803d;--grnbg:#f0fdf4;--blu:#1d4ed8;--blubg:#eff6ff;--gry:#57534e;--grybg:#f5f5f4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 28px 80px}
+h1{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}h2{font-size:20px;margin:40px 0 12px}
+.sub{color:var(--mute);margin:0 0 28px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:28px;flex-wrap:wrap}
+nav a{padding:10px 14px;color:var(--mute);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500}
+nav a.on{color:var(--ink);border-color:var(--ink)}nav a:hover{color:var(--ink)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{text-align:left;font-size:13px;font-weight:600;color:var(--mute);padding:12px 16px;border-bottom:1px solid var(--line);background:var(--soft)}
+td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}tbody tr.click:hover{background:#f8f7f5}
+.num{text-align:right;font-variant-numeric:tabular-nums;width:84px}.zero{color:#d6d3d1}
+.b{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px;white-space:nowrap;letter-spacing:.02em}
+.v-BOTH-BUG,.v-MISMATCH{color:var(--red);background:var(--redbg)}.v-INVALID,.v-PARTIAL{color:var(--amb);background:var(--ambbg)}
+.v-BLOCKED,.v-SKIPPED{color:var(--gry);background:var(--grybg)}.v-EXPECTED-DIFF{color:var(--blu);background:var(--blubg)}.v-PASS{color:var(--grn);background:var(--grnbg)}
+.legend{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;font-size:15px}
+.legend div:nth-child(odd){padding-top:1px}
+.tid{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:var(--mute);white-space:nowrap}
+.tname{font-weight:600}.why{color:#44403c;font-size:15px;margin-top:2px}
+.filters{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}.filters button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--mute)}
+.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.modal{position:fixed;inset:0;background:rgba(28,25,23,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:9}
+.modal.open{display:flex}.box{background:#fff;border-radius:14px;max-width:920px;width:100%;padding:32px 36px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.box h3{font-size:22px;margin:8px 0 4px}.close{float:right;border:0;background:var(--soft);border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}
+.issue{border-left:4px solid var(--red);background:var(--redbg);padding:14px 18px;border-radius:6px;margin:20px 0;font-size:16px}
+.issue.ok{border-color:var(--grn);background:var(--grnbg)}.issue.warn{border-color:var(--amb);background:var(--ambbg)}.issue.info{border-color:var(--blu);background:var(--blubg)}
+.meta{color:var(--mute);font-size:14px}
+.probe{border:1px solid var(--line);border-radius:10px;margin:16px 0;overflow:hidden}
+.ph{padding:12px 16px;background:var(--soft);display:flex;gap:10px;align-items:center;font-size:15px}
+.cmp{display:grid;grid-template-columns:1fr 1fr}.cmp>div{padding:14px 16px}.cmp>div+div{border-left:1px solid var(--line)}
+.side{font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.08em}
+.code{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}.code.diff{color:var(--red)}
+.exp{font-size:14px}.exp.bad{color:var(--red);font-weight:600}.exp.good{color:var(--grn)}
+.dt{width:100%;border:0;border-top:1px solid var(--line);border-radius:0;font-size:14px}.dt td,.dt th{padding:8px 16px}
+.dt td{font-family:ui-monospace,Menlo,monospace;font-size:13px;word-break:break-word}.dt .o{background:#fff5f5}.dt .n{background:#f3fbf5}
+details{margin-top:24px;border-top:1px solid var(--line);padding-top:16px}summary{cursor:pointer;color:var(--mute);font-weight:500}
+pre{background:#1c1917;color:#e7e5e4;padding:14px;border-radius:8px;font-size:12px;overflow:auto;max-height:420px}
+.nr{padding:12px 16px;font-size:14px;color:#44403c}
+</style></head><body><div class="wrap">
+<h1>TECH-317 — OLD API vs NEW API</h1>
+<p class="sub">Batch 1, round 2. Every test sends the same request to OLD (Laravel) and NEW (staging5) and compares the answers. 144 tests.</p>
+<nav id="nav"></nav><main id="main"></main></div>
+<div class="modal" id="modal" onclick="if(event.target===this)closeM()"><div class="box" id="mbox"></div></div>
+<script src="data/summary.js"></script>
+<script>
+const ORDER=['BOTH-BUG','MISMATCH','INVALID','PARTIAL','BLOCKED','SKIPPED','EXPECTED-DIFF','PASS'];
+const LBL={'BOTH-BUG':'Bug in both','MISMATCH':'Different','INVALID':'Test broken','PARTIAL':'Incomplete','BLOCKED':'Couldn’t run','SKIPPED':'Skipped','EXPECTED-DIFF':'Intended change','PASS':'Same'};
+const DEF={'PASS':'OLD and NEW gave the same answer, and it’s the correct one.',
+'EXPECTED-DIFF':'OLD and NEW differ, but the difference is a deliberate, documented change.',
+'MISMATCH':'OLD and NEW gave different answers and nobody has explained why. Needs a look.',
+'BOTH-BUG':'OLD and NEW agree — but both are wrong compared to the spec.',
+'PARTIAL':'Only some of the planned checks ran. Not a pass — the rest is unverified.',
+'BLOCKED':'Nothing could run (e.g. no SMS code, missing setup data).',
+'SKIPPED':'Deliberately not run this round.',
+'INVALID':'The test harness itself failed — result says nothing about the API.'};
+const S=window.SUM; const SECS=S.map(s=>({key:s.key,title:s.title.replace(/^§\d+\s*/,''),cases:s.cases}));
+const both=[];S.forEach(s=>s.cases.forEach(c=>{if(c.verdict==='BOTH-BUG')both.push({...c,_sec:s.key})}));
+SECS.push({key:'both',title:'Bugs in both',cases:both});
+const esc=t=>String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const badge=v=>`<span class="b v-${v}">${LBL[v]||v}</span>`;
+const findC=(k,id)=>{const s=SECS.find(x=>x.key===k);return s&&s.cases.find(c=>c.id===id)};
+let filt=null;
+function route(){const [k,id]=location.hash.slice(1).split('/');
+ document.getElementById('nav').innerHTML=`<a href="#" class="${!k?'on':''}">Overview</a>`+SECS.map(s=>`<a href="#${s.key}" class="${k===s.key?'on':''}">${s.title} <span class="meta">${s.cases.length}</span></a>`).join('');
+ if(!k)hub();else sec(k);
+ if(id){const c=findC(k,id);c?openM(k,c):closeM(true)}else closeM(true)}
+function hub(){const cols=ORDER;
+ let h=`<h2 style="margin-top:0">Sections</h2><table><thead><tr><th>Section</th><th class="num">Tests</th>${cols.map(v=>`<th class="num">${LBL[v]}</th>`).join('')}</tr></thead><tbody>`;
+ SECS.forEach(s=>{const n={};s.cases.forEach(c=>n[c.verdict]=(n[c.verdict]||0)+1);
+  h+=`<tr class="click" onclick="location.hash='${s.key}'"><td class="tname">${s.title}</td><td class="num">${s.cases.length}</td>${cols.map(v=>`<td class="num ${n[v]?'':'zero'}">${n[v]?`<b style="color:var(--${/BUG|MISM/.test(v)?'red':/INVAL|PART/.test(v)?'amb':v==='PASS'?'grn':v==='EXPECTED-DIFF'?'blu':'gry'})">${n[v]}</b>`:'—'}</td>`).join('')}</tr>`});
+ h+=`</tbody></table><p class="meta">Sections are in Batch 1 order. Click a row to see its tests (worst first). Columns go from most to least serious.</p>
+ <h2>What the labels mean</h2><div class="legend">${ORDER.map(v=>`<div>${badge(v)}</div><div>${DEF[v]}</div>`).join('')}</div>`;
+ document.getElementById('main').innerHTML=h}
+function sec(k){const s=SECS.find(x=>x.key===k);if(!s)return hub();
+ const present=ORDER.filter(v=>s.cases.some(c=>c.verdict===v));
+ let h=`<div class="filters"><button class="${!filt?'on':''}" onclick="filt=null;route()">All ${s.cases.length}</button>${present.map(v=>`<button class="${filt===v?'on':''}" onclick="filt='${v}';route()">${LBL[v]} ${s.cases.filter(c=>c.verdict===v).length}</button>`).join('')}</div>
+ <table><thead><tr><th style="width:150px">Result</th><th style="width:90px">Test</th><th>What it checks · why it got this result</th></tr></thead><tbody>`;
+ s.cases.filter(c=>!filt||c.verdict===filt).forEach(c=>{h+=`<tr class="click" onclick="location.hash='${k}/${c.id}'"><td>${badge(c.verdict)}</td><td class="tid">${c.id}${c._sec?`<br><span class="meta">${c._sec}</span>`:''}</td><td><div class="tname">${esc(c.name)}</div><div class="why">${esc(c.why)}</div></td></tr>`});
+ document.getElementById('main').innerHTML=h+'</tbody></table>'}
+const W={met:['correct','good'],violated:['wrong','bad'],'n/a':['no spec — parity only','']};
+function probeHtml(p){
+ if(p.status!=='ran')return `<div class="probe"><div class="ph">${badge(p.verdict||'BLOCKED')}<b>${p.id}</b> ${esc(p.intent)}</div><div class="nr">Not run — ${esc(p.not_run_reason||p.status)}</div></div>`;
+ const sd=p.old_status!==p.new_status, e=x=>{const w=W[x]||[x,''];return `<div class="exp ${w[1]}">vs. spec: ${w[0]}</div>`};
+ let d='';if(p.diffs.length){d=`<table class="dt"><thead><tr><th>Field</th><th>OLD</th><th>NEW</th></tr></thead><tbody>${p.diffs.map(x=>`<tr><td>${esc(x.path.replace('$body.',''))}${x.cls&&x.cls!=='unexplained'?` <span class="meta">(${esc(x.cls)})</span>`:''}</td><td class="o">${x.kind==='added'?'<i>missing</i>':esc(x.old)}</td><td class="n">${x.kind==='removed'?'<i>missing</i>':esc(x.new)}</td></tr>`).join('')}</tbody></table>${p.diff_count>p.diffs.length?`<div class="nr">+${p.diff_count-p.diffs.length} more differing fields (see full capture)</div>`:''}`}
+ return `<div class="probe"><div class="ph">${badge(p.verdict)}<b>${p.id}</b> ${esc(p.intent)}</div>
+ <div class="cmp"><div><div class="side">OLD</div><div class="code ${sd?'diff':''}">${p.old_status??'—'}</div>${e(p.exp_old)}</div><div><div class="side">NEW</div><div class="code ${sd?'diff':''}">${p.new_status??'—'}</div>${e(p.exp_new)}</div></div>${d}</div>`}
+function openM(k,c){const v=c.verdict;const cls=/BUG|MISM/.test(v)?'':/INVAL|PART|BLOCK|SKIP/.test(v)?'warn':v==='PASS'?'ok':'info';
+ const bad=c.probes.filter(p=>p.verdict!=='PASS'),good=c.probes.filter(p=>p.verdict==='PASS');
+ document.getElementById('mbox').innerHTML=`<button class="close" onclick="location.hash='${k}'">×</button>${badge(v)} <span class="tid">${c.id}</span>
+ <h3>${esc(c.name)}</h3><div class="meta">${esc(c.intent)}</div>
+ <div class="issue ${cls}"><b>${LBL[v]}:</b> ${esc(c.why)}<div class="meta" style="margin-top:6px">${DEF[v]}</div></div>
+ <div class="meta"><b>Expected:</b> ${esc(c.expected)} · ${c.coverage.ran} of ${c.coverage.planned} checks ran</div>
+ ${bad.length?`<h2 style="margin-top:24px">Checks with problems (${bad.length})</h2>${bad.map(probeHtml).join('')}`:''}
+ ${good.length?`<details><summary>Checks that matched (${good.length})</summary>${good.map(probeHtml).join('')}</details>`:''}
+ <details ontoggle="if(this.open&&!this.dataset.l){this.dataset.l=1;fetch('data/cases/${c._sec||k}/${c.id}.json').then(r=>r.json()).then(j=>this.querySelector('pre').textContent=JSON.stringify(j,null,2))}"><summary>Full capture (raw requests &amp; responses)</summary><p class="meta">${esc(c.reason)}</p><pre>Loading…</pre></details>`;
+ document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden'}
+function closeM(silent){document.getElementById('modal').classList.remove('open');document.body.style.overflow=''}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&location.hash.includes('/'))location.hash=location.hash.split('/')[0].slice(1)});
+let last='';window.addEventListener('hashchange',()=>{const k=location.hash.slice(1).split('/')[0];if(k!==last)filt=null;last=k;route()});route();
 </script></body></html>
