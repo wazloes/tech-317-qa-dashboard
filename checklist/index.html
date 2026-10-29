@@ -204,11 +204,32 @@ const TESTS = [
     id: 'P6',
     section: 'pre',
     name: 'HubSpot sandbox / blank',
-    status: 'todo',
+    status: 'pass',
     linear: 'P6 · HUBSPOT_ACCESS_TOKEN sandbox or blank',
     simple: 'Confirm HubSpot token is sandbox or blank before creating companies/projects.',
-    sent: null, old: null, new: null, time: null,
-    verdict: 'Not started.'
+    sent: {
+      method: 'GET',
+      url: 'https://api.hubapi.com/account-info/v3/details',
+      body: 'Authorization: Bearer HUBSPOT_ACCESS_TOKEN (prefix only in report)'
+    },
+    old: {
+      label: 'OLD · local',
+      url: 'DB configurations + N/A for staging token',
+      status: null,
+      body: 'Shared DB use_hubspot_sync=1 (same staging DB).',
+      ok: true,
+      note: 'Flag is shared; token check is staging5 Forge env.'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: 'HubSpot account-info + Forge env',
+      status: 200,
+      body: 'HUBSPOT_ACCESS_TOKEN → accountType DEVELOPER_TEST, portalId 343607524. use_hubspot_sync=1.',
+      ok: true,
+      note: 'Sandbox. HUBSPOT_ACCESS_TOKEN_STANDARD is STANDARD portal 343386062 — note only.'
+    },
+    time: '2026-10-29 11:52 MST',
+    verdict: 'Pass — primary token is DEVELOPER_TEST sandbox; sync flag on.'
   },
   {
     id: 'P7',
