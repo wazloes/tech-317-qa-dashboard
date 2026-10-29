@@ -8,113 +8,240 @@
 :root{--bg:#fafaf9;--card:#fff;--ink:#1c1917;--mute:#78716c;--line:#e7e5e4;--soft:#f5f5f4;
 --grn:#15803d;--grnbg:#f0fdf4;--amb:#b45309;--ambbg:#fffbeb;--red:#b91c1c;--redbg:#fef2f2}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.wrap{max-width:880px;margin:0 auto;padding:40px 28px 80px}
-h1{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}h2{font-size:20px;margin:36px 0 12px}
+.wrap{max-width:920px;margin:0 auto;padding:40px 28px 80px}
+h1{font-size:28px;margin:0 0 6px}h2{font-size:20px;margin:36px 0 12px}
 .sub{color:var(--mute);margin:0 0 24px}
 .banner{background:var(--grnbg);border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;margin:0 0 28px}
-.banner.warn{background:var(--ambbg);border-color:#fde68a}
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 th{text-align:left;font-size:13px;font-weight:600;color:var(--mute);padding:12px 16px;border-bottom:1px solid var(--line);background:var(--soft)}
 td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}
-.ok{color:var(--grn);font-weight:600}.wait{color:var(--amb);font-weight:600}.todo{color:var(--mute)}
-.meta{color:var(--mute);font-size:14px}
-.evidence{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-top:12px}
-.evidence h3{margin:0 0 10px;font-size:16px}
-.evidence dl{display:grid;grid-template-columns:120px 1fr;gap:8px 16px;margin:0}
-.evidence dt{color:var(--mute);font-size:14px}.evidence dd{margin:0;font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-word}
-a{color:#1d4ed8}
+tbody tr.click{cursor:pointer}tbody tr.click:hover{background:#f8f7f5}
+.ok{color:var(--grn);font-weight:600}.wait{color:var(--amb);font-weight:600}.todo{color:var(--mute)}.fail{color:var(--red);font-weight:600}
+.meta{color:var(--mute);font-size:14px}.hint{color:var(--mute);font-size:13px;margin:8px 0 0}
+.modal{position:fixed;inset:0;background:rgba(28,25,23,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:9}
+.modal.open{display:flex}.box{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.box h3{font-size:22px;margin:8px 0 4px}.close{float:right;border:0;background:var(--soft);border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}
+.desc{font-size:16px;margin:12px 0 20px}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:640px){.sides{grid-template-columns:1fr}}
+.side{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--soft)}
+.side h4{margin:0 0 8px;font-size:13px;letter-spacing:.06em;color:var(--mute);text-transform:uppercase}
+.side .code{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.side .code.ok{color:var(--grn)}.side .code.bad{color:var(--red)}
+.side pre,.req pre{background:#1c1917;color:#e7e5e4;padding:12px;border-radius:8px;font-size:13px;overflow:auto;margin:8px 0 0;white-space:pre-wrap;word-break:break-word}
+.req{margin:16px 0}.label{font-size:13px;font-weight:600;color:var(--mute);letter-spacing:.04em;text-transform:uppercase}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px}
+.badge.pass{color:var(--grn);background:var(--grnbg)}.badge.fail{color:var(--red);background:var(--redbg)}.badge.wait{color:var(--amb);background:var(--ambbg)}.badge.todo{color:var(--mute);background:var(--soft)}
 .sec-empty{color:var(--mute);padding:8px 0}
+a{color:#1d4ed8}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>TECH-317 checklist</h1>
-<p class="sub">Linear story on staging5 — one box at a time. Updated as we go. Source: <a href="https://linear.app/faberconnect/issue/TECH-317/qa-waz-payments-hourstimecards-invoicing-pdfs-authotpjwt-on-staging5">TECH-317</a>.</p>
+<p class="sub">Linear story on staging5 — one box at a time. Click a row for what was sent, what came back, and OLD (local) vs NEW (staging5). Source: <a href="https://linear.app/faberconnect/issue/TECH-317/qa-waz-payments-hourstimecards-invoicing-pdfs-authotpjwt-on-staging5">TECH-317</a>.</p>
 
-<div class="banner">
-<strong>In progress.</strong> 1 precondition passed (P1). Next: P2 — confirm <code>APP_ENV</code> ≠ production on Forge.
+<div class="banner" id="banner"></div>
+<div id="main"></div>
+<p class="meta" style="margin-top:40px">HTML · personal GitHub Pages · not a Grok Page.</p>
 </div>
 
-<h2>Progress</h2>
-<table>
-<thead><tr><th>Bucket</th><th>Count</th><th>Notes</th></tr></thead>
-<tbody>
-<tr><td class="ok">Passed</td><td>1</td><td>P1</td></tr>
-<tr><td>Failed</td><td>0</td><td>—</td></tr>
-<tr><td class="wait">Waiting</td><td>1</td><td>P2 needs Forge</td></tr>
-<tr><td class="todo">Not started</td><td>—</td><td>P3–P7 · §§1–7</td></tr>
-</tbody>
-</table>
-
-<h2>Preconditions</h2>
-<table>
-<thead><tr><th style="width:90px">Status</th><th>Item</th><th>Evidence</th></tr></thead>
-<tbody>
-<tr>
-  <td class="ok">Pass</td>
-  <td><strong>P1</strong> · <code>GET https://staging5.faberconnect.com/up</code> returns 200</td>
-  <td>200 OK · body <code>OK</code> · 2026-10-29 11:33 MST</td>
-</tr>
-<tr>
-  <td class="wait">Waiting</td>
-  <td><strong>P2</strong> · staging5 <code>APP_ENV</code> ≠ <code>production</code> (note if <code>testing</code>)</td>
-  <td>Needs Forge / someone with .env access</td>
-</tr>
-<tr>
-  <td class="todo">Not started</td>
-  <td><strong>P3</strong> · Stripe keys are test keys (<code>sk_test_</code> / <code>pk_test_</code>)</td>
-  <td>—</td>
-</tr>
-<tr>
-  <td class="todo">Not started</td>
-  <td><strong>P4</strong> · <code>VOPAY_API_URL</code> is sandbox (else skip Pay workers)</td>
-  <td>—</td>
-</tr>
-<tr>
-  <td class="todo">Not started</td>
-  <td><strong>P5</strong> · Queue workers <code>faber-queue-l13</code> (+ named <code>-l13</code>) running</td>
-  <td>—</td>
-</tr>
-<tr>
-  <td class="todo">Not started</td>
-  <td><strong>P6</strong> · HubSpot token is sandbox or blank</td>
-  <td>—</td>
-</tr>
-<tr>
-  <td class="todo">Not started</td>
-  <td><strong>P7</strong> · wkhtmltopdf OpenSSL 3 jammy build on staging5</td>
-  <td>—</td>
-</tr>
-</tbody>
-</table>
-
-<div class="evidence">
-<h3>P1 evidence</h3>
-<dl>
-  <dt>Result</dt><dd>Pass</dd>
-  <dt>Request</dt><dd>GET https://staging5.faberconnect.com/up</dd>
-  <dt>Response</dt><dd>HTTP 200 · body: OK</dd>
-  <dt>Time</dt><dd>2026-10-29 11:33:57 MST</dd>
-  <dt>Linear</dt><dd>Box ticked on TECH-317</dd>
-</dl>
+<div class="modal" id="modal" onclick="if(event.target===this)closeM()">
+  <div class="box" id="mbox"></div>
 </div>
 
-<h2>§1 JWT</h2>
-<p class="sec-empty">Not started. Boxes land here as we run them.</p>
-<h2>§2 OTP / v2 auth</h2>
-<p class="sec-empty">Not started.</p>
-<h2>§3 Stripe</h2>
-<p class="sec-empty">Not started.</p>
-<h2>§4 Hours</h2>
-<p class="sec-empty">Not started.</p>
-<h2>§5 Worker pay</h2>
-<p class="sec-empty">Not started.</p>
-<h2>§6 Invoices / PDFs</h2>
-<p class="sec-empty">Not started.</p>
-<h2>§7 Regression</h2>
-<p class="sec-empty">Not started.</p>
+<script>
+const TESTS = [
+  {
+    id: 'P1',
+    section: 'pre',
+    name: 'Health check `/up`',
+    status: 'pass',
+    linear: 'P1 · GET staging5 /up returns 200',
+    simple: 'Hit the health URL on both servers. NEW must return 200. OLD (Laravel 5.7) has no `/up` route, so 404 there is expected.',
+    sent: {
+      method: 'GET',
+      path: '/up',
+      body: null,
+      note: 'No body. No auth.'
+    },
+    old: {
+      label: 'OLD · local :8001',
+      url: 'http://127.0.0.1:8001/up',
+      status: 404,
+      body: 'HTML 404 page (route does not exist on master)',
+      ok: false,
+      note: 'Expected — `/up` was added for L13 / staging5.'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: 'https://staging5.faberconnect.com/up',
+      status: 200,
+      body: 'OK',
+      ok: true,
+      note: 'Passes the Linear checkbox.'
+    },
+    time: '2026-10-29 11:33 MST (rechecked 11:40 MST)',
+    verdict: 'Linear P1 = Pass (NEW 200). OLD 404 is not a fail for this box.'
+  },
+  {
+    id: 'P2',
+    section: 'pre',
+    name: 'APP_ENV ≠ production',
+    status: 'wait',
+    linear: 'P2 · staging5 APP_ENV ≠ production',
+    simple: 'Someone with Forge access must confirm staging5 `.env` has APP_ENV not set to production (and note if it is testing).',
+    sent: null,
+    old: null,
+    new: null,
+    time: null,
+    verdict: 'Waiting — needs Forge .env check.'
+  },
+  {
+    id: 'P3',
+    section: 'pre',
+    name: 'Stripe test keys',
+    status: 'todo',
+    linear: 'P3 · Stripe sk_test_ / pk_test_',
+    simple: 'Confirm Stripe secret starts with sk_test_ and the FE uses pk_test_.',
+    sent: null, old: null, new: null, time: null,
+    verdict: 'Not started.'
+  },
+  {
+    id: 'P4',
+    section: 'pre',
+    name: 'VoPay sandbox URL',
+    status: 'todo',
+    linear: 'P4 · VOPAY_API_URL is sandbox',
+    simple: 'Confirm VoPay URL is sandbox. If not confirmed, skip every Pay workers item later.',
+    sent: null, old: null, new: null, time: null,
+    verdict: 'Not started.'
+  },
+  {
+    id: 'P5',
+    section: 'pre',
+    name: 'Queue workers running',
+    status: 'todo',
+    linear: 'P5 · faber-queue-l13 workers running',
+    simple: 'Confirm staging5 queue workers (faber-queue-l13 and named -l13 queues) are up after last deploy.',
+    sent: null, old: null, new: null, time: null,
+    verdict: 'Not started.'
+  },
+  {
+    id: 'P6',
+    section: 'pre',
+    name: 'HubSpot sandbox / blank',
+    status: 'todo',
+    linear: 'P6 · HUBSPOT_ACCESS_TOKEN sandbox or blank',
+    simple: 'Confirm HubSpot token is sandbox or blank before creating companies/projects.',
+    sent: null, old: null, new: null, time: null,
+    verdict: 'Not started.'
+  },
+  {
+    id: 'P7',
+    section: 'pre',
+    name: 'wkhtmltopdf OpenSSL 3',
+    status: 'todo',
+    linear: 'P7 · wkhtmltopdf jammy / OpenSSL 3',
+    simple: 'SSH check: wkhtmltopdf --version is the OpenSSL 3 jammy build.',
+    sent: null, old: null, new: null, time: null,
+    verdict: 'Not started.'
+  }
+];
 
-<p class="meta" style="margin-top:40px">HTML only · personal GitHub Pages · not a Grok Page.</p>
-</div>
+const STATUS = {
+  pass: { cls: 'ok', badge: 'pass', label: 'Pass' },
+  fail: { cls: 'fail', badge: 'fail', label: 'Fail' },
+  wait: { cls: 'wait', badge: 'wait', label: 'Waiting' },
+  todo: { cls: 'todo', badge: 'todo', label: 'Not started' }
+};
+
+function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+
+function sideHtml(s){
+  if(!s) return `<div class="side"><h4>Not run</h4><p class="meta">No request yet.</p></div>`;
+  return `<div class="side">
+    <h4>${esc(s.label)}</h4>
+    <div class="code ${s.ok?'ok':'bad'}">${esc(s.status)}</div>
+    <div class="meta" style="margin-top:4px">${esc(s.url)}</div>
+    <div class="label" style="margin-top:12px">Body</div>
+    <pre>${esc(s.body)}</pre>
+    ${s.note?`<p class="meta">${esc(s.note)}</p>`:''}
+  </div>`;
+}
+
+function openM(id){
+  const t=TESTS.find(x=>x.id===id); if(!t) return;
+  const st=STATUS[t.status];
+  const sent = t.sent
+    ? `<div class="req"><div class="label">What we sent</div>
+        <pre>${esc(t.sent.method)} ${esc(t.sent.path)}\n${t.sent.body?JSON.stringify(t.sent.body,null,2):'(no body)'}\n${t.sent.note?'\n'+t.sent.note:''}</pre></div>`
+    : `<div class="req"><div class="label">What we sent</div><p class="meta">Nothing sent yet.</p></div>`;
+  document.getElementById('mbox').innerHTML=`
+    <button class="close" onclick="closeM()">×</button>
+    <span class="badge ${st.badge}">${st.label}</span>
+    <h3>${esc(t.id)} · ${esc(t.name)}</h3>
+    <div class="meta">${esc(t.linear)}</div>
+    <p class="desc">${esc(t.simple)}</p>
+    ${sent}
+    <div class="label">What came back</div>
+    <div class="sides">${sideHtml(t.old)}${sideHtml(t.new)}</div>
+    <p><strong>${esc(t.verdict)}</strong></p>
+    ${t.time?`<p class="meta">Checked: ${esc(t.time)}</p>`:''}
+  `;
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow='hidden';
+  location.hash=id;
+}
+function closeM(){
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow='';
+  if(location.hash) history.replaceState(null,'',location.pathname);
+}
+
+function render(){
+  const passed=TESTS.filter(t=>t.status==='pass').length;
+  const failed=TESTS.filter(t=>t.status==='fail').length;
+  const waiting=TESTS.filter(t=>t.status==='wait').length;
+  document.getElementById('banner').innerHTML=
+    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${waiting} waiting. Next: P2 (Forge APP_ENV). Click any row for details.`;
+
+  const rows=TESTS.map(t=>{
+    const st=STATUS[t.status];
+    const evid = t.status==='pass'
+      ? `NEW ${t.new.status} · OLD ${t.old.status} · click for detail`
+      : (t.status==='wait'?'Needs Forge':'—');
+    return `<tr class="click" onclick="openM('${t.id}')">
+      <td class="${st.cls}">${st.label}</td>
+      <td><strong>${esc(t.id)}</strong> · ${esc(t.name)}<div class="hint">${esc(t.linear)}</div></td>
+      <td class="meta">${esc(evid)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('main').innerHTML=`
+    <h2>Progress</h2>
+    <table><thead><tr><th>Bucket</th><th>Count</th></tr></thead><tbody>
+      <tr><td class="ok">Passed</td><td>${passed}</td></tr>
+      <tr><td class="fail">Failed</td><td>${failed}</td></tr>
+      <tr><td class="wait">Waiting</td><td>${waiting}</td></tr>
+      <tr><td class="todo">Not started</td><td>${TESTS.filter(t=>t.status==='todo').length}</td></tr>
+    </tbody></table>
+    <h2>Preconditions</h2>
+    <p class="hint">Click a row to open the popup.</p>
+    <table><thead><tr><th style="width:110px">Status</th><th>Test</th><th>Evidence</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <h2>§1 JWT</h2><p class="sec-empty">Not started.</p>
+    <h2>§2 OTP / v2 auth</h2><p class="sec-empty">Not started.</p>
+    <h2>§3 Stripe</h2><p class="sec-empty">Not started.</p>
+    <h2>§4 Hours</h2><p class="sec-empty">Not started.</p>
+    <h2>§5 Worker pay</h2><p class="sec-empty">Not started.</p>
+    <h2>§6 Invoices / PDFs</h2><p class="sec-empty">Not started.</p>
+    <h2>§7 Regression</h2><p class="sec-empty">Not started.</p>
+  `;
+  const h=location.hash.slice(1); if(h) openM(h);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
+render();
+</script>
 </body>
 </html>
