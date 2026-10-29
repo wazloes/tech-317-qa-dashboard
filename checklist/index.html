@@ -353,6 +353,38 @@ const TESTS = [
     },
     time: '2026-10-29 12:05 MST',
     verdict: 'Pass — both sides return 400 with the expected wrong-app messages.'
+  },
+  {
+    id: 'J1-04',
+    section: 'jwt',
+    name: 'Unconfirmed account → 403',
+    status: 'pass',
+    linear: '§1 · unconfirmed /auth/contractor → 403',
+    simple: 'Register a customer and do not confirm. Login on /auth/contractor must return 403 so the FE can show confirm-email.',
+    sent: {
+      method: 'POST',
+      path: '/auth/contractor',
+      body: '{ email of unconfirmed customer, password }',
+      note: 'Account registered but never confirmed.'
+    },
+    old: {
+      label: 'OLD · local :8001',
+      url: 'http://127.0.0.1:8001/auth/contractor',
+      status: 403,
+      body: '"You have not verified your account. Please resend the verification code."',
+      ok: true,
+      note: '403 as required for FE confirm flow.'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: 'https://staging5.faberconnect.com/auth/contractor',
+      status: 403,
+      body: '"You have not verified your account. Please resend the verification code."',
+      ok: true,
+      note: 'Same 403 message as OLD.'
+    },
+    time: '2026-10-29 12:05 MST',
+    verdict: 'Pass — both sides 403 for unconfirmed contractor login.'
   }
 ];
 
@@ -468,7 +500,7 @@ function render(){
   `;
   // re-set banner after innerHTML wiped it
   document.getElementById('banner').innerHTML=
-    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: unconfirmed account 403. Click any row for details.`;
+    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: bad password / no token / garbage token. Click any row for details.`;
   const h=location.hash.slice(1); if(h) openM(h);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
