@@ -40,7 +40,7 @@ tr.child td{background:#fcfcfb;font-size:15px}tr.child td.tname{padding-left:44p
 .call h4{margin:0 0 6px;font-size:17px}.mono{font-family:ui-monospace,Menlo,monospace}
 .side pre,.req pre{max-height:520px}
 .diffs{background:#fef9c3;border-radius:8px;padding:10px 14px;margin:10px 0}
-.diff-type{color:#fb923c;font-weight:700}.diff-miss{color:#f87171;font-weight:700}.diffs .diff-type{color:#c2410c}.diffs .diff-miss{color:#dc2626}.jfold{color:#78716c}
+.diff-type{color:#fb923c;font-weight:700}.diff-miss{color:#f87171;font-weight:700}.diffs .diff-type{color:#c2410c}.diffs .diff-miss{color:#dc2626}.jfold{color:#78716c}.diff-extra{color:#e5e7eb}.diffs .diff-extra{color:#9ca3af}
 .okp{color:var(--grn);font-weight:700}.bang{display:inline-block;margin-left:6px;min-width:18px;text-align:center;font-weight:800;color:#854d0e;background:#facc15;border-radius:9px;padding:0 5px}
 .difftop{border-bottom:1px solid var(--line);margin:8px 0 14px;padding-bottom:6px}.difftop .sides{margin:8px 0}.dnotes{margin:4px 0 8px 18px;padding:0}.dnotes li{margin:3px 0}.t-type{color:#c2410c}.t-miss{color:#dc2626}.typebox{border:2px solid #f59e0b;background:#fffbeb;border-radius:8px;padding:10px 14px;margin:10px 0 14px}.typebox strong{color:#b45309}.typebox ul{margin:6px 0 0 18px;padding:0}.typebox li{margin:2px 0}
 .dtoggle{margin-left:10px;padding:3px 10px;border-radius:6px;border:1px solid #a8a29e;background:#fff;cursor:pointer;font-size:12px}
@@ -1011,14 +1011,13 @@ function parseDiffs(d){return (d||[]).map(x=>{let m=x.match(/^(\S+?):\s*(.+ vs .
  else if(m=x.match(/^(\S+) missing on (NEW|OLD)$/)){path=m[1];kind='missing';side=m[2].toLowerCase()}else return {text:x,kind:'type',path:null};
  if(path==='root')path='';return {text:x,path,kind,missingOn:side}})}
 function bodyHtml(body,diffs,which,force){const DO=force||DIFFS_ONLY;let j;try{j=JSON.parse(body)}catch(e){const d=diffs.find(x=>x.path==='');return d?`<span class="diff-${d.kind==='type'?'type':'miss'}">${esc(body)}</span>`:esc(body)}
- const map={};const ph={};diffs.forEach(d=>{if(d.path===null)return;if(d.kind==='missing'&&d.missingOn===which){const i=Math.max(d.path.lastIndexOf('.'),d.path.lastIndexOf('['));const par=d.path.slice(0,i);const k=d.path.slice(i).replace(/^\./,'');(ph[par]=ph[par]||[]).push(k)}else map[d.path]=d.kind});
+ const map={};const ph={};diffs.forEach(d=>{if(d.path===null)return;if(d.kind==='missing'){if(d.missingOn===which)return;map[d.path]=d.missingOn==='old'?'extra':'missing'}else map[d.path]=d.kind});
  const keys=Object.keys(map).concat(Object.keys(ph));const rel=p=>keys.some(k=>k===p||k.startsWith(p+'.')||k.startsWith(p+'['))||p==='';
- const wrap=(p,h)=>map[p]?`<span class="${map[p]==='type'?'diff-type':'diff-miss'}">${h}</span>`:h;
+ const wrap=(p,h)=>map[p]?`<span class="${map[p]==='type'?'diff-type':map[p]==='extra'?'diff-extra':'diff-miss'}">${h}</span>`:h;
  function r(v,p,ind){const pad='  '.repeat(ind+1),end='  '.repeat(ind);
   if(v&&typeof v==='object'){const arr=Array.isArray(v);const ents=arr?v.map((x,i)=>[i,x]):Object.entries(v);let lines=[],skipped=0;
    ents.forEach(([k,x])=>{const cp=arr?`${p}[${k}]`:`${p}.${k}`;if(DO&&!map[cp]&&!rel(cp)){skipped++;return}
     const lab=arr?'':`"${esc(k)}": `;lines.push(pad+wrap(cp,lab+(map[cp]?esc(JSON.stringify(x,null,2)).replace(/\n/g,'\n'+pad):r(x,cp,ind+1))))});
-   (ph[p]||[]).forEach(k=>lines.push(pad+`<span class="diff-miss">"${esc(k)}": «missing»</span>`));
    if(skipped)lines.push(pad+`<span class="jfold">… ${skipped} unchanged</span>`);
    if(!lines.length)return arr?'[]':'{}';return (arr?'[':'{')+'\n'+lines.join(',\n')+'\n'+end+(arr?']':'}')}
   return esc(JSON.stringify(v))}
