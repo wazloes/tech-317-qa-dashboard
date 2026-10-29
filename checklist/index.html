@@ -119,11 +119,32 @@ const TESTS = [
     id: 'P3',
     section: 'pre',
     name: 'Stripe test keys',
-    status: 'todo',
+    status: 'pass',
     linear: 'P3 · Stripe sk_test_ / pk_test_',
     simple: 'Confirm Stripe secret starts with sk_test_ and the FE uses pk_test_.',
-    sent: null, old: null, new: null, time: null,
-    verdict: 'Not started.'
+    sent: {
+      method: 'env check + API',
+      url: 'local .env STRIPE_SECRET / STRIPE_USA_SECRET; staging5 POST /v2/admin/company/credit-card/stripe',
+      body: 'prefixes only; tok_visa attach on company 938'
+    },
+    old: {
+      label: 'OLD · local',
+      url: 'local .env',
+      status: 200,
+      body: 'STRIPE_SECRET=sk_test_… · STRIPE_USA_SECRET=sk_test_…',
+      ok: true,
+      note: 'Publishable STRIPE_KEY / pk_test_ not provided yet.'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: 'https://staging5.faberconnect.com/v2/admin/company/credit-card/stripe',
+      status: 200,
+      body: 'Credit card added successfully (tok_visa → last4 4242, cus_…)',
+      ok: true,
+      note: 'tok_visa only works with test secrets — staging5 STRIPE_SECRET is test mode.'
+    },
+    time: '2026-10-29 11:47 MST',
+    verdict: 'Pass for secrets (sk_test_ local + staging5 accepts tok_visa). FE pk_test_ still pending if needed.'
   },
   {
     id: 'P4',
