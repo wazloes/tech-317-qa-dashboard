@@ -44,6 +44,16 @@ tr.child td{background:#fcfcfb;font-size:15px}tr.child td.tname{padding-left:44p
 .okp{color:var(--grn);font-weight:700}.bang{display:inline-block;margin-left:6px;min-width:18px;text-align:center;font-weight:800;color:#854d0e;background:#facc15;border-radius:9px;padding:0 5px}
 .difftop{border-bottom:1px solid var(--line);margin:8px 0 14px;padding-bottom:6px}.difftop .sides{margin:8px 0}.dnotes{margin:4px 0 8px 18px;padding:0}.dnotes li{margin:3px 0}.t-type{color:#c2410c}.t-miss{color:#dc2626}.t-extra{color:#57534e}.typebox{border:2px solid #f59e0b;background:#fffbeb;border-radius:8px;padding:10px 14px;margin:10px 0 14px}.typebox strong{color:#b45309}.typebox ul{margin:6px 0 0 18px;padding:0}.typebox li{margin:2px 0}
 .dtoggle{margin-left:10px;padding:3px 10px;border-radius:6px;border:1px solid #a8a29e;background:#fff;cursor:pointer;font-size:12px}
+
+.sec{margin:18px 0 8px}.sec>h2{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;margin:0}
+.sec>h2 .chev{display:inline-block;width:1em;color:var(--mute);font-weight:400;transition:transform .15s}
+.sec.collapsed>h2 .chev{transform:rotate(-90deg)}
+.sec.collapsed .sec-body{display:none}
+tr.parent .tw{cursor:pointer;user-select:none;margin-right:6px;color:var(--mute);display:inline-block;width:1em}
+tr.child.hidden{display:none}
+td.idcol{width:110px;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.idcol .mono{font-weight:600}
+
 </style>
 </head>
 <body>
@@ -1092,14 +1102,23 @@ function openM(id){const f=find(id);if(!f)return;const t=f.t;let h='';
  document.getElementById('mbox').innerHTML=`<button class="close" onclick="closeM()">×</button>`+h;
  document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden';location.hash=id;window.scrollTo(0,0);document.getElementById('modal').scrollTop=0}
 function closeM(){document.getElementById('modal').classList.remove('open');document.body.style.overflow='';if(location.hash)history.replaceState(null,'',location.pathname)}
+const OPEN_TESTS=new Set();
+const OPEN_SECS=new Set(['pre','jwt']); // sections with content start open; empty ones collapsed
+function toggleSec(id,ev){ev.stopPropagation();const el=document.getElementById('sec-'+id);if(!el)return;el.classList.toggle('collapsed');if(el.classList.contains('collapsed'))OPEN_SECS.delete(id);else OPEN_SECS.add(id)}
+function toggleTest(id,ev){ev.stopPropagation();if(OPEN_TESTS.has(id))OPEN_TESTS.delete(id);else OPEN_TESTS.add(id);render()}
 function render(){const c=s=>TESTS.filter(t=>t.status===s).length;const calls=TESTS.reduce((a,t)=>a+(t.children||[]).length,0);
- document.getElementById('banner').innerHTML=`<strong>In progress.</strong> ${c('pass')} pass · ${c('warn')} pass with ! · ${c('fail')} fail · ${c('skip')} skipped · ${c('wait')} waiting. ${calls} API calls, each with its own report. Click a test for its call list, or an indented call row for the full OLD/NEW report.`;
+ document.getElementById('banner').innerHTML=`<strong>In progress.</strong> ${c('pass')} pass · ${c('warn')} pass with ! · ${c('fail')} fail · ${c('skip')} skipped · ${c('wait')} waiting. ${calls} API calls. Expand a test to see its calls; click a row for the report.`;
  function rows(sec){const l=TESTS.filter(t=>t.section===sec);if(!l.length)return `<p class="sec-empty">Not started.</p>`;
-  return `<table><thead><tr><th style="width:140px">Status</th><th>Test / API call</th><th style="width:170px">OLD → NEW</th></tr></thead><tbody>${l.map(t=>{const st=STATUS[t.status];
-   let r=`<tr class="click" onclick="openM('${t.id}')"><td class="${st.cls}">${lbl(st)}</td><td><strong>${esc(t.id)}</strong> · ${esc(t.name)}<div class="hint">${esc(t.linear)}</div></td><td class="meta">${t.children?t.children.length+' call'+(t.children.length>1?'s':''):'no API call'}</td></tr>`;
-   for(const ch of (t.children||[])){const s2=STATUS[ch.status];r+=`<tr class="click child" onclick="openM('${ch.id}')"><td class="${s2.cls}">↳ ${lbl(s2)}</td><td class="tname"><strong>${esc(ch.id)}</strong> · <span class="mono">${esc(ch.method)} ${esc(ch.path)}</span><div class="hint">${esc(ch.name)}</div></td><td class="meta">${ch.old.status} → ${ch.new.status}</td></tr>`}
+  return `<table><thead><tr><th class="idcol">ID</th><th style="width:120px">Status</th><th>Test / API call</th><th style="width:150px">OLD → NEW</th></tr></thead><tbody>${l.map(t=>{const st=STATUS[t.status];
+   const hasKids=!!(t.children&&t.children.length);const open=OPEN_TESTS.has(t.id);
+   const tw=hasKids?`<span class="tw" onclick="toggleTest('${t.id}',event)">${open?'▼':'▶'}</span>`:'';
+   let r=`<tr class="click parent" onclick="openM('${t.id}')"><td class="idcol mono">${tw}${esc(t.id)}</td><td class="${st.cls}">${lbl(st)}</td><td>${esc(t.name)}<div class="hint">${esc(t.linear)}</div></td><td class="meta">${hasKids?t.children.length+' call'+(t.children.length>1?'s':''):'—'}</td></tr>`;
+   if(hasKids&&open){for(const ch of t.children){const s2=STATUS[ch.status];
+    r+=`<tr class="click child" onclick="openM('${ch.id}')"><td class="idcol mono">${esc(ch.id)}</td><td class="${s2.cls}">${lbl(s2)}</td><td class="tname"><span class="mono">${esc(ch.method)} ${esc(ch.path)}</span><div class="hint">${esc(ch.name)}</div></td><td class="meta">${ch.old.status} → ${ch.new.status}</td></tr>`}}
    return r}).join('')}</tbody></table>`}
- document.getElementById('main').innerHTML=`<h2>Preconditions</h2>${rows('pre')}<h2>§1 JWT</h2>${rows('jwt')}`+['§2 OTP / v2 auth','§3 Stripe','§4 Hours','§5 Worker pay','§6 Invoices / PDFs','§7 Regression'].map(x=>`<h2>${x}</h2><p class="sec-empty">Not started.</p>`).join('');
- const h=location.hash.slice(1);if(h)openM(h)}
+ function sec(id,title,body){const open=OPEN_SECS.has(id);return `<div class="sec${open?'':' collapsed'}" id="sec-${id}"><h2 onclick="toggleSec('${id}',event)"><span class="chev">▼</span>${title}</h2><div class="sec-body">${body}</div></div>`}
+ const empty=['otp','stripe','hours','pay','invoice','reg'].map((id,i)=>sec(id,['§2 OTP / v2 auth','§3 Stripe','§4 Hours','§5 Worker pay','§6 Invoices / PDFs','§7 Regression'][i],`<p class="sec-empty">Not started.</p>`)).join('');
+ document.getElementById('main').innerHTML=sec('pre','Preconditions',rows('pre'))+sec('jwt','§1 JWT',rows('jwt'))+empty;
+ const h=location.hash.slice(1);if(h){const f=find(h);if(f&&f.parent){OPEN_TESTS.add(f.parent.id);OPEN_SECS.add(f.parent.section||'jwt');render();openM(h);return}openM(h)}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});render();
 </script></body></html>
