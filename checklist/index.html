@@ -16,7 +16,7 @@ table{width:100%;border-collapse:collapse;background:var(--card);border:1px soli
 th{text-align:left;font-size:13px;font-weight:600;color:var(--mute);padding:12px 16px;border-bottom:1px solid var(--line);background:var(--soft)}
 td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}
 tbody tr.click{cursor:pointer}tbody tr.click:hover{background:#f8f7f5}
-.ok{color:var(--grn);font-weight:600}.wait{color:var(--amb);font-weight:600}.todo{color:var(--mute)}.fail{color:var(--red);font-weight:600}
+.ok{color:var(--grn);font-weight:600}.wait{color:var(--amb);font-weight:600}.todo{color:var(--mute)}.fail{color:var(--red);font-weight:600}.skip{color:var(--mute);font-weight:600}
 .meta{color:var(--mute);font-size:14px}.hint{color:var(--mute);font-size:13px;margin:8px 0 0}
 .modal{position:fixed;inset:0;background:rgba(28,25,23,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:9}
 .modal.open{display:flex}.box{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -31,7 +31,7 @@ tbody tr.click{cursor:pointer}tbody tr.click:hover{background:#f8f7f5}
 .side pre,.req pre{background:#1c1917;color:#e7e5e4;padding:12px;border-radius:8px;font-size:13px;overflow:auto;margin:8px 0 0;white-space:pre-wrap;word-break:break-word}
 .req{margin:16px 0}.label{font-size:13px;font-weight:600;color:var(--mute);letter-spacing:.04em;text-transform:uppercase}
 .badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px}
-.badge.pass{color:var(--grn);background:var(--grnbg)}.badge.fail{color:var(--red);background:var(--redbg)}.badge.wait{color:var(--amb);background:var(--ambbg)}.badge.todo{color:var(--mute);background:var(--soft)}
+.badge.pass{color:var(--grn);background:var(--grnbg)}.badge.fail{color:var(--red);background:var(--redbg)}.badge.wait{color:var(--amb);background:var(--ambbg)}.badge.todo{color:var(--mute);background:var(--soft)}.badge.skip{color:#57534e;background:#f5f5f4}
 .sec-empty{color:var(--mute);padding:8px 0}
 a{color:#1d4ed8}
 </style>
@@ -150,11 +150,28 @@ const TESTS = [
     id: 'P4',
     section: 'pre',
     name: 'VoPay sandbox URL',
-    status: 'todo',
+    status: 'skip',
     linear: 'P4 · VOPAY_API_URL is sandbox',
     simple: 'Confirm VoPay URL is sandbox. If not confirmed, skip every Pay workers item later.',
-    sent: null, old: null, new: null, time: null,
-    verdict: 'Not started.'
+    sent: null,
+    old: {
+      label: 'OLD · local',
+      url: '—',
+      status: null,
+      body: 'Not checked — Pay/VoPay access not granted.',
+      ok: null,
+      note: 'Skip Pay workers.'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: '—',
+      status: null,
+      body: 'Not checked — no VoPay access yet.',
+      ok: null,
+      note: 'Skip every Pay workers item; draft/export/mark-paid/cancel still OK.'
+    },
+    time: '2026-10-29 11:49 MST',
+    verdict: 'Skipped — no VoPay access yet (Waz).'
   },
   {
     id: 'P5',
@@ -192,7 +209,8 @@ const STATUS = {
   pass: { cls: 'ok', badge: 'pass', label: 'Pass' },
   fail: { cls: 'fail', badge: 'fail', label: 'Fail' },
   wait: { cls: 'wait', badge: 'wait', label: 'Waiting' },
-  todo: { cls: 'todo', badge: 'todo', label: 'Not started' }
+  todo: { cls: 'todo', badge: 'todo', label: 'Not started' },
+  skip: { cls: 'skip', badge: 'skip', label: 'Skipped' }
 };
 
 function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
@@ -241,9 +259,10 @@ function closeM(){
 function render(){
   const passed=TESTS.filter(t=>t.status==='pass').length;
   const failed=TESTS.filter(t=>t.status==='fail').length;
+  const skipped=TESTS.filter(t=>t.status==='skip').length;
   const waiting=TESTS.filter(t=>t.status==='wait').length;
   document.getElementById('banner').innerHTML=
-    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${waiting} waiting. Next: P3 (Stripe test keys). Click any row for details.`;
+    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: P3 (Stripe test keys). Click any row for details.`;
 
   const rows=TESTS.map(t=>{
     const st=STATUS[t.status];
