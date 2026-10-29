@@ -1119,6 +1119,6 @@ function render(){const c=s=>TESTS.filter(t=>t.status===s).length;const calls=TE
  function sec(id,title,body){const open=OPEN_SECS.has(id);return `<div class="sec${open?'':' collapsed'}" id="sec-${id}"><h2 onclick="toggleSec('${id}',event)"><span class="chev">▼</span>${title}</h2><div class="sec-body">${body}</div></div>`}
  const empty=['otp','stripe','hours','pay','invoice','reg'].map((id,i)=>sec(id,['§2 OTP / v2 auth','§3 Stripe','§4 Hours','§5 Worker pay','§6 Invoices / PDFs','§7 Regression'][i],`<p class="sec-empty">Not started.</p>`)).join('');
  document.getElementById('main').innerHTML=sec('pre','Preconditions',rows('pre'))+sec('jwt','§1 JWT',rows('jwt'))+empty;
- const h=location.hash.slice(1);if(h){const f=find(h);if(f&&f.parent){OPEN_TESTS.add(f.parent.id);OPEN_SECS.add(f.parent.section||'jwt');render();openM(h);return}openM(h)}}
+ const h=location.hash.slice(1);if(h){const f=find(h);if(f&&f.parent&&!OPEN_TESTS.has(f.parent.id)){OPEN_TESTS.add(f.parent.id);OPEN_SECS.add(f.parent.section||'jwt');render();return}openM(h)}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});render();
 </script></body></html>
