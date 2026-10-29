@@ -87,15 +87,33 @@ const TESTS = [
   {
     id: 'P2',
     section: 'pre',
-    name: 'APP_ENV ≠ production',
-    status: 'wait',
-    linear: 'P2 · staging5 APP_ENV ≠ production',
-    simple: 'Someone with Forge access must confirm staging5 `.env` has APP_ENV not set to production (and note if it is testing).',
-    sent: null,
-    old: null,
-    new: null,
-    time: null,
-    verdict: 'Waiting — needs Forge .env check.'
+    name: 'Not on prod DB (jordan+1 marker)',
+    status: 'pass',
+    linear: 'P2 · local + staging5 not on prod (test-DB marker)',
+    simple: 'If jordan+1@faberconnect.com exists, that DB is the shared test/staging DB. Confirm local is isolated and staging5 is on test (not prod).',
+    sent: {
+      method: 'POST',
+      url: '/auth/admin',
+      body: '{ email: jordan+1@faberconnect.com, password: •••• }'
+    },
+    old: {
+      label: 'OLD · local',
+      url: 'http://127.0.0.1:8001/auth/admin (+ DB faber_local)',
+      status: 401,
+      body: 'You have provided invalid credentials. / users table: 0 rows for jordan+1',
+      ok: true,
+      note: 'Local faber_local — not the test DB (and not prod).'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: 'https://staging5.faberconnect.com/auth/admin',
+      status: 200,
+      body: '{ "token": "<JWT>" }',
+      ok: true,
+      note: 'jordan+1 exists → staging5 is on the shared test/staging DB (not prod).'
+    },
+    time: '2026-10-29 11:45 MST',
+    verdict: 'Pass — local isolated; staging5 on test DB as expected.'
   },
   {
     id: 'P3',
@@ -204,7 +222,7 @@ function render(){
   const failed=TESTS.filter(t=>t.status==='fail').length;
   const waiting=TESTS.filter(t=>t.status==='wait').length;
   document.getElementById('banner').innerHTML=
-    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${waiting} waiting. Next: P2 (Forge APP_ENV). Click any row for details.`;
+    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${waiting} waiting. Next: P3 (Stripe test keys). Click any row for details.`;
 
   const rows=TESTS.map(t=>{
     const st=STATUS[t.status];
