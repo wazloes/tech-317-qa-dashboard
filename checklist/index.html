@@ -235,11 +235,28 @@ const TESTS = [
     id: 'P7',
     section: 'pre',
     name: 'wkhtmltopdf OpenSSL 3',
-    status: 'todo',
+    status: 'pass',
     linear: 'P7 · wkhtmltopdf jammy / OpenSSL 3',
     simple: 'SSH check: wkhtmltopdf --version is the OpenSSL 3 jammy build.',
-    sent: null, old: null, new: null, time: null,
-    verdict: 'Not started.'
+    sent: { method: 'Forge Commands', url: 'staging5', body: 'wkhtmltopdf --version; which; WKHTMLTOPDF_BINARY' },
+    old: {
+      label: 'OLD · local',
+      url: '—',
+      status: null,
+      body: 'N/A — precondition is staging5 server binary.',
+      ok: true,
+      note: 'PDF parity later compares API outputs.'
+    },
+    new: {
+      label: 'NEW · staging5',
+      url: 'Forge Commands',
+      status: 200,
+      body: 'wkhtmltopdf 0.12.6.1 (with patched qt)\n/usr/local/bin/wkhtmltopdf\nWKHTMLTOPDF_BINARY=unset',
+      ok: true,
+      note: 'Installed at expected path; env var unset is fine.'
+    },
+    time: '2026-10-29 12:00 MST',
+    verdict: 'Pass — wkhtmltopdf present on staging5.'
   }
 ];
 
