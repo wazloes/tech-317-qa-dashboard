@@ -15,13 +15,23 @@ tr.row td{padding:7px 6px;border-bottom:1px solid #21262d;cursor:pointer}tr.row:
 .probe{border:1px solid #30363d;border-radius:8px;margin:10px 0;padding:10px}.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .side{background:#161b22;border-radius:6px;padding:8px;min-width:0}pre{white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto;background:#010409;padding:8px;border-radius:4px;font-size:12px;margin:4px 0}
 .k{color:#8b949e}input{background:#010409;color:#c9d1d9;border:1px solid #30363d;padding:6px;border-radius:6px;width:300px}
-</style></head><body><nav id="nav"></nav><main id="main"></main>
+.hubrow a{color:#58a6ff;text-decoration:none}.hubrow td{padding:9px 6px;border-bottom:1px solid #21262d}.hubrow.bad td:first-child{border-left:4px solid #f85149}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;z-index:50;overflow:auto}#ov.on{display:block}
+#mod{background:#0d1117;border:1px solid #30363d;border-radius:10px;max-width:1200px;margin:40px auto;padding:20px;position:relative}
+#mod .x{position:absolute;right:14px;top:10px;font-size:22px;cursor:pointer;color:#8b949e}
+.issue{background:#2d1214;border:1px solid #f85149;border-radius:8px;padding:12px;margin:10px 0}.issue.ok{background:#0f2a18;border-color:#2ea043}
+.legend{font-size:12px;color:#8b949e;margin:8px 0 14px;line-height:1.9}summary{cursor:pointer;color:#58a6ff;margin:8px 0}
+.NEW-BUG,.OLD-BUG{background:#a3005c;color:#fff}
+</style></head><body><nav id="nav"></nav><main id="main"></main><div id="ov" onclick="if(event.target==this)closeM()"><div id="mod"><span class="x" onclick="closeM()">✕</span><div id="mb"></div></div></div>
 <script src="data/data.js"></script><script>
 const Q=window.QA,M=document.getElementById('main');
+const LEG={'PASS':'old and new behave the same / as expected','EXPECTED-DIFF':'differs, but the difference is intended','PARTIAL':'not all planned probes ran (some blocked/skipped) — never treat as a pass','MISMATCH':'new API differs from old in a way that matters','BOTH-BUG':'old and new both wrong','OLD-BUG':'only old is wrong','NEW-BUG':'only new is wrong','INVALID':'test harness fault, result unusable','BLOCKED':'could not run (missing fixture/SMS/etc.)','SKIPPED':'intentionally not run'};
 const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const vb=v=>`<span class="v ${esc(v)}">${esc(v)}</span>`;
+const vb=v=>`<span class="v ${esc(String(v).split(" ")[0])}" title="${esc(LEG[String(v).split(" ")[0]]||"")}">${esc(v)}</span>`;
 const pj=o=>o==null?'<span class="k">null</span>':`<pre>${esc(typeof o=='string'?o:JSON.stringify(o,null,2))}</pre>`;
 const verd=c=>(c.result||{}).verdict||'?';
+const SEV=['BOTH-BUG','MISMATCH','NEW-BUG','OLD-BUG','INVALID','PARTIAL','BLOCKED','EXPECTED-DIFF','SKIPPED','PASS'];const sv=v=>{const i=SEV.indexOf(v);return i<0?5:i};
+const legend=()=>'<div class="legend">'+['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'].map(v=>`<span>${vb(v)} ${LEG[v]}</span>`).join(' &nbsp; ')+'</div>';
 const all=()=>Q.sections.flatMap(s=>s.cases.map(c=>[s,c]));
 function counts(cs){const m={};cs.forEach(c=>m[verd(c)]=(m[verd(c)]||0)+1);const O=['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'];const r=k=>{const i=O.indexOf(k);return i<0?99:i};return Object.keys(m).sort((a,b)=>r(a)-r(b)||a.localeCompare(b)).filter(k=>m[k]>0).map(k=>vb(k+' '+m[k])).join(' ')}
 function nav(cur){document.getElementById('nav').innerHTML=[['hub','Hub'],...Q.sections.map(s=>[s.key,s.title]),['both','Both-system bugs']].map(([k,t])=>`<a href="#${k}" class="${k==cur?'on':''}">${t}</a>`).join('')}
@@ -30,10 +40,17 @@ return `<div><b>${esc(rq.method)}</b> ${esc(rq.url)} <span class="k">${esc(x.cal
 <div class="k">request headers</div>${pj(rq.headers)}<div class="k">request body</div>${pj(rq.body)}
 <div>status <b>${esc(rs.status)}</b> <span class="k">(${esc(rs.body_kind)})</span></div><div class="k">response headers</div>${pj(rs.headers)}<div class="k">response body</div>${pj(rs.body)}
 ${Object.keys(x).filter(k=>!['request','response','call_id','duration_ms','side','started_at'].includes(k)).map(k=>`<div class="k">${esc(k)}</div>${pj(x[k])}`).join('')}`}
+function issue(c){const r=c.result||{},v=verd(c),ok=v=='PASS'||v=='EXPECTED-DIFF';
+const bad=(c.probes||[]).filter(p=>(p.verdict||p.status)!='PASS');
+let h=`<div class="issue ${ok?'ok':''}"><div style="font-size:16px">${vb(v)} <b>${esc(c.id)} — ${esc(c.name)}</b></div><p><b>Why:</b> ${esc((r.verdict_reason||LEG[v]||'').split(' — calls:')[0])}</p>`;
+if(bad.length){h+=`<table><thead><tr><th>Probe</th><th>Verdict</th><th>OLD status</th><th>NEW status</th><th>What differs</th></tr></thead><tbody>`+bad.map(p=>{const os=((p.old||{}).response||{}).status,ns=((p.new||{}).response||{}).status;const d=(p.diff&&p.diff.entries)||[];
+const ds=p.not_run?('not run: '+JSON.stringify(p.not_run).slice(0,160)):d.slice(0,4).map(e=>typeof e=='string'?e:(e.path||'')+' '+(e.kind||e.type||'')+(e.old!==undefined?' old='+JSON.stringify(e.old).slice(0,40):'')+(e.new!==undefined?' new='+JSON.stringify(e.new).slice(0,40):'')).join(' · ')+(d.length>4?` (+${d.length-4} more)`:'');
+return `<tr><td><b>${esc(p.probe_id)}</b><div class="k">${esc(p.intent)}</div></td><td>${vb(p.verdict||p.status)}</td><td><b style="color:${os!=ns?'#f85149':'inherit'}">${esc(os??'—')}</b></td><td><b style="color:${os!=ns?'#f85149':'inherit'}">${esc(ns??'—')}</b></td><td class="k">${esc(ds)}</td></tr>`}).join('')+'</tbody></table>'}
+else h+='<p class="k">All probes passed.</p>';return h+'</div>'}
 function detail(c){const r=c.result||{};
-let h=`<div><b>${esc(c.id)} — ${esc(c.name)}</b> ${vb(verd(c))}</div><p><span class="k">Intent:</span> ${esc(c.intent)}</p>
+let h=issue(c)+`<details><summary>Full capture (intent, setup, every probe with OLD/NEW request + response bodies)</summary><p><span class="k">Intent:</span> ${esc(c.intent)}</p>
 <p><span class="k">Expected:</span> ${esc((c.expected||{}).statement)} <span class="k">(${esc((c.expected||{}).source)})</span></p>
-<p><span class="k">Verdict reason:</span> ${esc(r.verdict_reason)}</p>${r.override?'<div class="k">override</div>'+pj(r.override):''}
+${r.override?'<div class="k">override</div>'+pj(r.override):''}
 <details><summary>Result / coverage / compare rules / annotations</summary>${pj({result:r,compare_rules:c.compare_rules,annotations:c.annotations,fixtures:c.fixtures,credential_roles:c.credential_roles})}</details>
 <h3>Setup (${(c.setup||[]).length})</h3>${(c.setup||[]).length?pj(c.setup):'<span class="k">none</span>'}<h3>Probes (${(c.probes||[]).length})</h3>`;
 (c.probes||[]).forEach(p=>{h+=`<div class="probe"><div><b>${esc(p.probe_id)}</b> ${esc(p.intent)} ${vb(p.verdict||p.status)} <span class="k">status=${esc(p.status)}</span></div>
@@ -41,18 +58,19 @@ let h=`<div><b>${esc(c.id)} — ${esc(c.name)}</b> ${vb(verd(c))}</div><p><span 
 ${p.diff?'<div class="k">diff ('+esc(p.diff.count)+')</div>'+pj(p.diff.entries):''}${p.expectation_check?'<div class="k">expectation check</div>'+pj(p.expectation_check):''}
 ${p.section_extras&&Object.keys(p.section_extras).length?'<div class="k">extras</div>'+pj(p.section_extras):''}
 <div class="sides"><div class="side"><b>OLD</b> ${side(p.old)}</div><div class="side"><b>NEW</b> ${side(p.new)}</div></div></div>`});
-h+=`<h3>Teardown</h3>${pj(c.teardown)}<div class="k">source: ${esc(c._file)}</div>`;return h}
-function table(rows,showSec){window._rows=rows;return `<input id="f" placeholder="filter id / name / verdict" oninput="filt(this.value)"><table><thead><tr>${showSec?'<th>Section</th>':''}<th>ID</th><th>Name</th><th>Verdict</th><th>Probes</th><th>Reason</th></tr></thead><tbody>`+
-rows.map(([s,c],i)=>`<tr class="row" data-i="${i}" data-t="${esc((c.id+' '+c.name+' '+verd(c)).toLowerCase())}" onclick="tog(this)">${showSec?`<td>${esc(s.title)}</td>`:''}<td><b>${esc(c.id)}</b></td><td>${esc(c.name)}</td><td>${vb(verd(c))}</td><td>${(c.probes||[]).length}</td><td class="k">${esc(((c.result||{}).verdict_reason||'').slice(0,140))}</td></tr>`).join('')+'</tbody></table>'}
-function tog(tr){const n=tr.nextElementSibling;if(n&&n.classList.contains('det')){n.remove();tr.classList.remove('open');return}
-const [s,c]=window._rows[tr.dataset.i];const d=document.createElement('tr');d.className='det';d.innerHTML=`<td colspan="9">${detail(c)}</td>`;tr.after(d);tr.classList.add('open');
-const id=location.hash.split('/')[0];history.replaceState(null,'',id+'/'+c.id)}
+h+=`<h3>Teardown</h3>${pj(c.teardown)}<div class="k">source: ${esc(c._file)}</div></details>`;return h}
+function table(rows,showSec){rows=rows.slice().sort((a,b)=>sv(verd(a[1]))-sv(verd(b[1])));window._rows=rows;return `<input id="f" placeholder="filter id / name / verdict" oninput="filt(this.value)"><table><thead><tr>${showSec?'<th>Section</th>':''}<th>Verdict</th><th>ID</th><th>Name</th><th>Why</th></tr></thead><tbody>`+
+rows.map(([s,c],i)=>`<tr class="row" data-i="${i}" data-t="${esc((c.id+' '+c.name+' '+verd(c)).toLowerCase())}" onclick="tog(this)">${showSec?`<td>${esc(s.title)}</td>`:''}<td>${vb(verd(c))}</td><td><b>${esc(c.id)}</b></td><td>${esc(c.name)}</td><td class="k" style="max-width:560px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(((c.result||{}).verdict_reason||LEG[verd(c)]||'').split(' — calls:')[0].split(/[;\n]|\. /)[0])}</td></tr>`).join('')+'</tbody></table>'}
+function tog(tr){const [x,c]=window._rows[tr.dataset.i];document.getElementById('mb').innerHTML=detail(c);document.getElementById('ov').classList.add('on');document.getElementById('ov').scrollTop=0;
+history.replaceState(null,'',(location.hash.split('/')[0]||'#hub')+'/'+c.id)}
+function closeM(){document.getElementById('ov').classList.remove('on');history.replaceState(null,'',location.hash.split('/')[0])}
+document.addEventListener('keydown',e=>{if(e.key=='Escape')closeM()});
 function filt(v){v=v.toLowerCase();document.querySelectorAll('tr.row').forEach(r=>{const h=!r.dataset.t.includes(v);r.style.display=h?'none':'';const n=r.nextElementSibling;if(n&&n.classList.contains('det'))n.style.display=h?'none':''})}
 function route(){const [k,open]=(location.hash.slice(1)||'hub').split('/');nav(k);
-if(k=='hub'){const O=['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'];const secs=Q.sections.map(s=>[s.key,s.title,s.cases]).concat([['both','Both-system bugs',all().filter(([s,c])=>verd(c)=='BOTH-BUG').map(x=>x[1])]]);const used=O.filter(v=>secs.some(x=>x[2].some(c=>verd(c)==v)));
-M.innerHTML=`<h1>TECH-317 QA — Round 2</h1><table class="hub"><thead><tr><th>Section</th><th>Total</th>${used.map(v=>`<th>${vb(v)}</th>`).join('')}</tr></thead><tbody>`+secs.map(([key,title,cs])=>`<tr class="hubrow" style="cursor:pointer" onclick="location.hash='${key}'"><td><a href="#${key}"><b>${title}</b></a></td><td>${cs.length}</td>${used.map(v=>{const n=cs.filter(c=>verd(c)==v).length;return `<td style="text-align:center">${n||'·'}</td>`}).join('')}</tr>`).join('')+`</tbody></table><style>tr.hubrow:hover{background:rgba(127,127,127,.15)}</style><p class="k">Click a section row, then click any test row to expand the full captured report.</p>`;return}
+if(k=='hub'){const O=['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'];const secs=Q.sections.map(s=>[s.key,s.title,s.cases]).concat([['both','Both-system bugs',all().filter(([s,c])=>verd(c)=='BOTH-BUG').map(x=>x[1])]]);secs.sort((a,b)=>{const w=cs=>-(cs.filter(c=>verd(c)=='BOTH-BUG').length*1000+cs.filter(c=>verd(c)=='MISMATCH').length*10+cs.filter(c=>verd(c)=='INVALID').length);return w(a[2])-w(b[2])});const used=O.filter(v=>secs.some(x=>x[2].some(c=>verd(c)==v)));
+M.innerHTML=`<h1>TECH-317 QA — Round 2</h1>${legend()}<p class="k">Sections sorted worst first. Click a row to open it.</p><table class="hub"><thead><tr><th>Section</th><th>Total</th>${used.map(v=>`<th>${vb(v)}</th>`).join('')}</tr></thead><tbody>`+secs.map(([key,title,cs])=>`<tr class="hubrow ${cs.some(c=>["BOTH-BUG","MISMATCH","INVALID"].includes(verd(c)))?"bad":""}" style="cursor:pointer" onclick="location.hash='${key}'"><td><a href="#${key}"><b>${title}</b></a></td><td>${cs.length}</td>${used.map(v=>{const n=cs.filter(c=>verd(c)==v).length;return `<td style="text-align:center">${n||'·'}</td>`}).join('')}</tr>`).join('')+`</tbody></table><style>tr.hubrow:hover{background:rgba(127,127,127,.15)}</style><p class="k">Click a section row, then click any test row to expand the full captured report.</p>`;return}
 let rows,t;if(k=='both'){rows=all().filter(([s,c])=>verd(c)=='BOTH-BUG');t='Both-system bugs (verdict BOTH-BUG)'}else{const s=Q.sections.find(x=>x.key==k);if(!s){M.innerHTML='unknown';return}rows=s.cases.map(c=>[s,c]);t=s.title+' — '+s.cases.length+' cases '+counts(s.cases)}
-M.innerHTML=`<h1>${t}</h1>`+(rows.length?table(rows,k=='both'):'<p>None.</p>');
-if(open){const tr=[...document.querySelectorAll('tr.row')].find(r=>window._rows[r.dataset.i][1].id==open);if(tr){tog(tr);tr.scrollIntoView()}}}
+document.getElementById('ov').classList.remove('on');M.innerHTML=`<h1>${t}</h1>`+legend()+(rows.length?table(rows,k=='both'):'<p>None.</p>');
+if(open){const tr=[...document.querySelectorAll('tr.row')].find(r=>window._rows[r.dataset.i][1].id==open);if(tr){tog(tr)}}}
 window.onhashchange=route;route();
 </script></body></html>
