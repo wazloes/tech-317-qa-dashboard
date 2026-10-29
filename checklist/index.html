@@ -40,6 +40,8 @@ tr.child td{background:#fcfcfb;font-size:15px}tr.child td.tname{padding-left:44p
 .call h4{margin:0 0 6px;font-size:17px}.mono{font-family:ui-monospace,Menlo,monospace}
 .side pre,.req pre{max-height:520px}
 .diffs{background:#fef9c3;border-radius:8px;padding:10px 14px;margin:10px 0}
+.diff-type{color:#fb923c;font-weight:700}.diff-miss{color:#f87171;font-weight:700}.diffs .diff-type{color:#c2410c}.diffs .diff-miss{color:#dc2626}.jfold{color:#78716c}
+.dtoggle{margin-left:10px;padding:3px 10px;border-radius:6px;border:1px solid #a8a29e;background:#fff;cursor:pointer;font-size:12px}
 </style>
 </head>
 <body>
@@ -989,11 +991,31 @@ const STATUS={pass:{cls:'ok',badge:'pass',label:'Pass'},warn:{cls:'warn',badge:'
 function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function hdrs(h){const k=Object.keys(h||{});return k.length?k.map(x=>x+': '+h[x]).join('\n'):'(none of interest)'}
 function find(id){for(const t of TESTS){if(t.id===id)return {t};for(const c of (t.children||[]))if(c.id===id)return {t:c,parent:t,n:t.children.indexOf(c)+1}}}
-function sideHtml(s){return `<div class="side"><h4>${esc(s.label)}</h4>
+
+let DIFFS_ONLY=false;
+function parseDiffs(d){return (d||[]).map(x=>{let m=x.match(/^(\S+?):\s*(.+ vs .+)$/);let path,kind,side=null;
+ if(m){path=m[1];kind='type'}else if(m=x.match(/^(\S+) only on (NEW|OLD)$/)){path=m[1];kind='missing';side=m[2]==='NEW'?'old':'new'}
+ else if(m=x.match(/^(\S+) missing on (NEW|OLD)$/)){path=m[1];kind='missing';side=m[2].toLowerCase()}else return {text:x,kind:'type',path:null};
+ if(path==='root')path='';return {text:x,path,kind,missingOn:side}})}
+function bodyHtml(body,diffs,which){let j;try{j=JSON.parse(body)}catch(e){const d=diffs.find(x=>x.path==='');return d?`<span class="diff-${d.kind==='type'?'type':'miss'}">${esc(body)}</span>`:esc(body)}
+ const map={};const ph={};diffs.forEach(d=>{if(d.path===null)return;if(d.kind==='missing'&&d.missingOn===which){const i=Math.max(d.path.lastIndexOf('.'),d.path.lastIndexOf('['));const par=d.path.slice(0,i);const k=d.path.slice(i).replace(/^\./,'');(ph[par]=ph[par]||[]).push(k)}else map[d.path]=d.kind});
+ const keys=Object.keys(map).concat(Object.keys(ph));const rel=p=>keys.some(k=>k===p||k.startsWith(p+'.')||k.startsWith(p+'['))||p==='';
+ const wrap=(p,h)=>map[p]?`<span class="${map[p]==='type'?'diff-type':'diff-miss'}">${h}</span>`:h;
+ function r(v,p,ind){const pad='  '.repeat(ind+1),end='  '.repeat(ind);
+  if(v&&typeof v==='object'){const arr=Array.isArray(v);const ents=arr?v.map((x,i)=>[i,x]):Object.entries(v);let lines=[],skipped=0;
+   ents.forEach(([k,x])=>{const cp=arr?`${p}[${k}]`:`${p}.${k}`;if(DIFFS_ONLY&&!map[cp]&&!rel(cp)){skipped++;return}
+    const lab=arr?'':`"${esc(k)}": `;lines.push(pad+wrap(cp,lab+(map[cp]?esc(JSON.stringify(x,null,2)).replace(/\n/g,'\n'+pad):r(x,cp,ind+1))))});
+   (ph[p]||[]).forEach(k=>lines.push(pad+`<span class="diff-miss">"${esc(k)}": «missing»</span>`));
+   if(skipped)lines.push(pad+`<span class="jfold">… ${skipped} unchanged</span>`);
+   if(!lines.length)return arr?'[]':'{}';return (arr?'[':'{')+'\n'+lines.join(',\n')+'\n'+end+(arr?']':'}')}
+  return esc(JSON.stringify(v))}
+ return wrap('',r(j,'',0))}
+function toggleDiffs(id){DIFFS_ONLY=!DIFFS_ONLY;openM(id)}
+function sideHtml(s,diffs,which){return `<div class="side"><h4>${esc(s.label)}</h4>
  <div class="code ${s.status<400?'ok':'bad'}">${esc(s.status)}</div>
  <div class="meta mono" style="margin-top:4px">${esc(s.url)}</div>
  <div class="label" style="margin-top:12px">Response headers</div><pre>${esc(hdrs(s.headers))}</pre>
- <div class="label" style="margin-top:12px">Response body (full)</div><pre>${esc(s.body)}</pre>
+ <div class="label" style="margin-top:12px">Response body (${DIFFS_ONLY?'diffs only':'full'})</div><pre>${bodyHtml(s.body,diffs||[],which)}</pre>
  <p class="meta">Captured ${esc(s.at)}</p></div>`}
 function sentHtml(c){const r=s=>`${esc(c.method)} ${esc(s.url)}\n${esc(hdrs(s.reqHeaders))}\n\n${esc(s.reqBody??'(no body)')}`;
  return `<div class="req"><div class="label">What we sent</div><div class="sides"><div><div class="meta">OLD</div><pre>${r(c.old)}</pre></div><div><div class="meta">NEW</div><pre>${r(c.new)}</pre></div></div></div>`}
@@ -1002,8 +1024,8 @@ function callHtml(c,n,parent){const st=STATUS[c.status];
  <h3>${esc(c.id)} · Call ${n} · <span class="mono">${esc(c.method)} ${esc(c.path)}</span></h3>
  <div class="meta">Part of ${esc(parent.id)} · ${esc(parent.name)} — ${esc(parent.linear)}</div>
  ${sentHtml(c)}
- <div class="label">What came back</div><div class="sides">${sideHtml(c.old)}${sideHtml(c.new)}</div>
- ${c.diffs.length?`<div class="diffs"><strong>Shape differences (OLD vs NEW)</strong><pre style="background:none;color:inherit;padding:0">${esc(c.diffs.join('\n'))}</pre></div>`:''}
+ <div class="label">What came back${c.diffs.length?`<button class="dtoggle" onclick="toggleDiffs('${c.id}')">${DIFFS_ONLY?'Show full JSON':'Show diffs only'}</button>`:''}</div><div class="sides">${sideHtml(c.old,parseDiffs(c.diffs),'old')}${sideHtml(c.new,parseDiffs(c.diffs),'new')}</div>
+ ${c.diffs.length?`<div class="diffs"><strong>Shape differences (OLD vs NEW)</strong><pre style="background:none;color:inherit;padding:0">${parseDiffs(c.diffs).map(d=>`<span class="${d.kind==='type'?'diff-type':'diff-miss'}">${esc(d.text)}</span>`).join('\n')}</pre></div>`:''}
  ${c.note?`<p class="meta">${esc(c.note)}</p>`:''}
  <p><strong>Verdict: ${esc(c.verdict)}</strong></p>`}
 function openM(id){const f=find(id);if(!f)return;const t=f.t;let h='';
