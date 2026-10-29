@@ -58,7 +58,7 @@ const DEF={'PASS':'OLD and NEW gave the same answer, and it’s the correct one.
 'BLOCKED':'Nothing could run (e.g. no SMS code, missing setup data).',
 'SKIPPED':'Deliberately not run this round.',
 'INVALID':'The test harness itself failed — result says nothing about the API.'};
-const S=window.SUM; const SECS=S.map(s=>({key:s.key,title:s.title.replace(/^§\d+\s*/,''),cases:s.cases}));
+const S=window.SUM; const SECS=S.map(s=>({key:s.key,title:s.title,cases:s.cases}));
 const both=[];S.forEach(s=>s.cases.forEach(c=>{if(c.verdict==='BOTH-BUG')both.push({...c,_sec:s.key})}));
 SECS.push({key:'both',title:'Bugs in both',cases:both});
 const esc=t=>String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
