@@ -23,7 +23,7 @@ const vb=v=>`<span class="v ${esc(v)}">${esc(v)}</span>`;
 const pj=o=>o==null?'<span class="k">null</span>':`<pre>${esc(typeof o=='string'?o:JSON.stringify(o,null,2))}</pre>`;
 const verd=c=>(c.result||{}).verdict||'?';
 const all=()=>Q.sections.flatMap(s=>s.cases.map(c=>[s,c]));
-function counts(cs){const m={};cs.forEach(c=>m[verd(c)]=(m[verd(c)]||0)+1);return Object.entries(m).map(([k,n])=>vb(k+' '+n)).join(' ')}
+function counts(cs){const m={};cs.forEach(c=>m[verd(c)]=(m[verd(c)]||0)+1);const O=['PASS','EXPECTED-DIFF','PARTIAL','MISMATCH','BOTH-BUG','OLD-BUG','NEW-BUG','INVALID','BLOCKED','SKIPPED'];const r=k=>{const i=O.indexOf(k);return i<0?99:i};return Object.keys(m).sort((a,b)=>r(a)-r(b)||a.localeCompare(b)).filter(k=>m[k]>0).map(k=>vb(k+' '+m[k])).join(' ')}
 function nav(cur){document.getElementById('nav').innerHTML=[['hub','Hub'],...Q.sections.map(s=>[s.key,s.title]),['both','Both-system bugs']].map(([k,t])=>`<a href="#${k}" class="${k==cur?'on':''}">${t}</a>`).join('')}
 function side(x){if(!x)return '<span class="k">not run</span>';const rq=x.request||{},rs=x.response||{};
 return `<div><b>${esc(rq.method)}</b> ${esc(rq.url)} <span class="k">${esc(x.call_id)} · ${esc(x.duration_ms)}ms</span></div>
