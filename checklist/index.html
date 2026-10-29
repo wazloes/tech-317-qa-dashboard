@@ -385,6 +385,45 @@ const TESTS = [
     },
     time: '2026-10-29 12:05 MST',
     verdict: 'Pass — both sides 403 for unconfirmed contractor login.'
+  },
+  {
+    id: 'J1-05',
+    section: 'jwt',
+    name: 'Bad password (no throttle)',
+    status: 'pass',
+    linear: '§1 · bad password → 401/400, throttle not early',
+    simple: 'Wrong password 8 times quickly. Expect 401/400 with a message each time, not 500, and no throttle yet.',
+    sent: { method: 'POST×8', path: '/auth/contractor', body: '{ email, password: WrongPass999! }' },
+    old: { label: 'OLD · local', url: 'http://127.0.0.1:8001/auth/contractor', status: 401, body: '8× "You have provided invalid credentials." (no 429)', ok: true, note: 'Throttle did not fire.' },
+    new: { label: 'NEW · staging5', url: 'https://staging5.faberconnect.com/auth/contractor', status: 401, body: '8× "You have provided invalid credentials." (no 429)', ok: true, note: 'Same as OLD.' },
+    time: '2026-10-29 12:06 MST',
+    verdict: 'Pass — 401 message both sides; throttle not hit at 8 tries.'
+  },
+  {
+    id: 'J1-06',
+    section: 'jwt',
+    name: 'No token → token_not_provided',
+    status: 'pass',
+    linear: '§1 · GET /user no header → 401 token_not_provided',
+    simple: 'Call GET /user with no Authorization header.',
+    sent: { method: 'GET', path: '/user', body: '(no Authorization header)' },
+    old: { label: 'OLD · local', url: 'http://127.0.0.1:8001/user', status: 401, body: '{"error":"token_not_provided"}', ok: true, note: '' },
+    new: { label: 'NEW · staging5', url: 'https://staging5.faberconnect.com/user', status: 401, body: '{"error":"token_not_provided"}', ok: true, note: '' },
+    time: '2026-10-29 12:06 MST',
+    verdict: 'Pass — identical 401 token_not_provided.'
+  },
+  {
+    id: 'J1-07',
+    section: 'jwt',
+    name: 'Garbage token → token_invalid',
+    status: 'pass',
+    linear: '§1 · Bearer abc.def.ghi → 401 token_invalid',
+    simple: 'Call GET /user with Authorization: Bearer abc.def.ghi.',
+    sent: { method: 'GET', path: '/user', body: 'Authorization: Bearer abc.def.ghi' },
+    old: { label: 'OLD · local', url: 'http://127.0.0.1:8001/user', status: 401, body: '{"error":"token_invalid"}', ok: true, note: '' },
+    new: { label: 'NEW · staging5', url: 'https://staging5.faberconnect.com/user', status: 401, body: '{"error":"token_invalid"}', ok: true, note: '' },
+    time: '2026-10-29 12:06 MST',
+    verdict: 'Pass — identical 401 token_invalid.'
   }
 ];
 
@@ -500,7 +539,7 @@ function render(){
   `;
   // re-set banner after innerHTML wiped it
   document.getElementById('banner').innerHTML=
-    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: bad password / no token / garbage token. Click any row for details.`;
+    `<strong>In progress.</strong> ${passed} passed · ${failed} failed · ${skipped} skipped · ${waiting} waiting. Next: expired-token refresh-in-header. Click any row for details.`;
   const h=location.hash.slice(1); if(h) openM(h);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
